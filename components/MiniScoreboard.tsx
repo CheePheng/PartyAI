@@ -9,8 +9,8 @@ export const MiniScoreboard: React.FC<MiniScoreboardProps> = ({ players }) => {
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0f172a]/85 backdrop-blur-xl border-t border-white/10 pb-safe pt-3 px-4 shadow-[0_-8px_32px_rgba(0,0,0,0.5)] animate-slide-up">
-       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x items-center">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0f172a]/90 backdrop-blur-2xl border-t border-white/5 pb-safe pt-4 px-4 sm:px-6 shadow-[0_-20px_40px_rgba(0,0,0,0.4)] motion-safe:animate-slide-up">
+       <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x items-center">
           {/* Label for context */}
           <div className="hidden sm:block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] -rotate-90 whitespace-nowrap">
              Top Scores
@@ -47,19 +47,19 @@ export const MiniScoreboard: React.FC<MiniScoreboardProps> = ({ players }) => {
                <div 
                  key={player.id} 
                  className={`
-                    flex-shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-2xl border ${borderColor} ${bgClasses} 
-                    min-w-[130px] snap-center transition-all duration-300 relative overflow-hidden group
+                    flex-shrink-0 flex items-center gap-3 px-4 py-3 rounded-2xl border ${borderColor} ${bgClasses} 
+                    min-w-[140px] snap-center motion-safe:transition-all duration-300 relative overflow-hidden group
                  `}
                >
-                  <span className="text-2xl drop-shadow-sm filter group-hover:scale-110 transition-transform duration-200">
+                  <span className="text-3xl drop-shadow-md filter group-hover:scale-110 motion-safe:transition-transform duration-200">
                     {player.avatar}
                   </span>
                   
                   <div className="flex flex-col z-10">
-                     <span className="text-[11px] font-bold truncate max-w-[85px] text-gray-200 uppercase tracking-wide opacity-80">
+                     <span className="text-xs font-bold truncate max-w-[90px] text-gray-200 uppercase tracking-wider opacity-90">
                        {player.name}
                      </span>
-                     <span className={`text-lg font-mono font-black leading-none ${scoreColor}`}>
+                     <span className={`text-xl font-mono font-black leading-none tracking-tighter ${scoreColor}`}>
                        {player.score}
                      </span>
                   </div>

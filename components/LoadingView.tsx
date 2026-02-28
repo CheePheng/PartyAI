@@ -119,22 +119,22 @@ export const LoadingView: React.FC<LoadingViewProps> = ({ message, gameType, ico
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center min-h-[50vh] animate-fade-in text-center p-6 ${className}`}>
+    <div className={`flex flex-col items-center justify-center min-h-[50vh] motion-safe:animate-fade-in text-center p-6 ${className}`}>
       {renderAnimation()}
       
-      <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 animate-pulse tracking-wide">
+      <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 motion-safe:animate-pulse tracking-tight">
         {message}
       </h3>
       
-      <p className="mt-4 text-xs text-gray-400 max-w-xs mx-auto italic opacity-80 h-8 transition-opacity duration-500">
+      <p className="mt-4 text-sm text-gray-400 max-w-sm mx-auto font-medium opacity-80 h-10 transition-opacity duration-500">
         {fact}
       </p>
 
       {/* Loading Dots */}
       <div className="mt-8 flex gap-2 justify-center opacity-80">
-         <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-         <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-         <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+         <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full motion-safe:animate-bounce" style={{ animationDelay: '0s' }}></div>
+         <div className="w-2.5 h-2.5 bg-purple-400 rounded-full motion-safe:animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+         <div className="w-2.5 h-2.5 bg-pink-400 rounded-full motion-safe:animate-bounce" style={{ animationDelay: '0.3s' }}></div>
       </div>
     </div>
   );

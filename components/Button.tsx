@@ -15,19 +15,19 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props 
 }) => {
-  const baseStyles = "inline-flex items-center justify-center font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyles = "inline-flex items-center justify-center font-bold rounded-2xl motion-safe:transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed select-none";
   
   const variants = {
-    primary: "bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/30 border border-white/10",
-    secondary: "bg-white/10 hover:bg-white/20 text-white border border-white/10 backdrop-blur-sm",
-    danger: "bg-red-500 hover:bg-red-400 text-white shadow-lg shadow-red-500/30",
-    ghost: "bg-transparent hover:bg-white/5 text-gray-300 hover:text-white"
+    primary: "bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:via-purple-400 hover:to-pink-400 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.4)] border border-white/10",
+    secondary: "bg-white/10 hover:bg-white/20 text-white border border-white/10 backdrop-blur-md shadow-lg",
+    danger: "bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-400 hover:to-rose-500 text-white shadow-[0_8px_30px_rgba(225,29,72,0.3)] border border-red-400/20",
+    ghost: "bg-transparent hover:bg-white/10 text-gray-300 hover:text-white"
   };
 
   const sizes = {
-    sm: "px-4 py-2 text-sm min-h-[44px]",
-    md: "px-6 py-3 text-base min-h-[48px]",
-    lg: "px-8 py-4 text-lg min-h-[56px]",
+    sm: "px-5 py-2.5 text-sm min-h-[44px]",
+    md: "px-7 py-3.5 text-base min-h-[48px]",
+    lg: "px-9 py-4 text-lg min-h-[56px] tracking-wide",
   };
 
   return (

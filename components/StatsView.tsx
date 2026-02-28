@@ -52,14 +52,14 @@ export const StatsView: React.FC<StatsViewProps> = ({ players, onClose }) => {
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden bg-[#1e293b] border-white/10 shadow-2xl">
-        <div className="flex justify-between items-center p-4 border-b border-white/10 bg-white/5">
-            <h2 className="text-2xl font-bold text-white">📊 Party Stats</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">✕</button>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 sm:p-6 pb-safe pt-safe bg-[#0f172a]/80 backdrop-blur-sm motion-safe:animate-fade-in">
+      <div className="relative bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-white/20 rounded-[2rem] w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl motion-safe:animate-slide-up">
+        <div className="flex-none flex justify-between items-center p-6 border-b border-white/10 bg-white/5">
+            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 tracking-tight leading-none">📊 Party Stats</h2>
+            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors active:scale-95">✕</button>
         </div>
         
-        <div className="overflow-y-auto p-4 space-y-4 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide">
             {sortedPlayers.map((player, idx) => {
                 const badges = getBadges(player);
                 const stats = player.stats || {};
@@ -68,15 +68,15 @@ export const StatsView: React.FC<StatsViewProps> = ({ players, onClose }) => {
                 const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
 
                 return (
-                    <div key={player.id} className="bg-white/5 rounded-xl p-4 border border-white/5">
-                        <div className="flex items-center gap-4 mb-3">
-                            <div className="text-4xl">{player.avatar}</div>
+                    <div key={player.id} className="bg-white/5 rounded-2xl p-5 border border-white/10 shadow-sm">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="text-5xl drop-shadow-md">{player.avatar}</div>
                             <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="text-xl font-bold text-white">{player.name}</h3>
-                                    {idx === 0 && <span className="text-yellow-400 text-xs font-bold border border-yellow-400 px-1.5 py-0.5 rounded">LEADER</span>}
+                                <div className="flex items-center gap-3">
+                                    <h3 className="text-2xl font-bold text-white tracking-tight">{player.name}</h3>
+                                    {idx === 0 && <span className="text-yellow-400 text-[10px] font-black uppercase tracking-widest border border-yellow-400/50 bg-yellow-400/10 px-2 py-1 rounded-full">LEADER</span>}
                                 </div>
-                                <div className="text-sm text-gray-400 flex gap-4 mt-1">
+                                <div className="text-sm text-gray-400 flex flex-wrap gap-x-4 gap-y-1 mt-1 font-medium">
                                     <span>🏆 {totalWins} Wins</span>
                                     <span>🎮 {totalGames} Played</span>
                                     <span>📈 {winRate}% Win Rate</span>
@@ -85,9 +85,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ players, onClose }) => {
                         </div>
 
                         {badges.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-3">
+                            <div className="flex flex-wrap gap-2 mb-4">
                                 {badges.map(b => (
-                                    <span key={b} className="px-2 py-1 bg-indigo-500/20 text-indigo-300 text-xs font-bold rounded-full border border-indigo-500/30">
+                                    <span key={b} className="px-3 py-1 bg-indigo-500/20 text-indigo-300 text-xs font-bold rounded-full border border-indigo-500/30 shadow-sm">
                                         {b}
                                     </span>
                                 ))}
@@ -95,13 +95,13 @@ export const StatsView: React.FC<StatsViewProps> = ({ players, onClose }) => {
                         )}
 
                         {/* Detailed Stats Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/5">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
                             {Object.entries(stats).map(([gameType, stat]) => {
                                 if (!stat || stat.played === 0) return null;
                                 return (
-                                    <div key={gameType} className="text-xs bg-black/20 p-2 rounded">
-                                        <div className="font-bold text-gray-300 mb-0.5 capitalize">{gameType.toLowerCase().replace('_', ' ')}</div>
-                                        <div className="text-gray-500">
+                                    <div key={gameType} className="text-xs bg-black/20 p-3 rounded-xl border border-white/5">
+                                        <div className="font-bold text-gray-300 mb-1 capitalize tracking-wide">{gameType.toLowerCase().replace('_', ' ')}</div>
+                                        <div className="text-gray-500 font-mono">
                                             {stat.wins}W - {stat.played}P
                                         </div>
                                     </div>
@@ -119,10 +119,10 @@ export const StatsView: React.FC<StatsViewProps> = ({ players, onClose }) => {
             )}
         </div>
 
-        <div className="p-4 border-t border-white/10 bg-white/5">
-            <Button onClick={onClose} className="w-full">Close</Button>
+        <div className="flex-none p-6 border-t border-white/10 bg-white/5">
+            <Button onClick={onClose} className="w-full text-lg py-4">Close</Button>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

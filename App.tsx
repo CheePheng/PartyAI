@@ -224,42 +224,42 @@ function App() {
     switch (screen) {
       case 'MODE_SELECT':
         return (
-            <div className="flex flex-col items-center justify-center h-full space-y-8 animate-fade-in p-4">
-                <div className="text-center space-y-2">
-                    <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">PartyAI</h1>
-                    <p className="text-gray-400">The Ultimate Game Night Experience</p>
+            <div className="flex flex-col items-center justify-center h-full space-y-8 motion-safe:animate-fade-in p-4 sm:p-8">
+                <div className="text-center space-y-3">
+                    <h1 className="text-6xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400 tracking-tighter drop-shadow-sm">PartyAI</h1>
+                    <p className="text-gray-400 font-medium tracking-wide">The Ultimate Game Night Experience</p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
                     <button 
                         onClick={() => handleModeSelect('SINGLE')}
-                        className="group relative p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all hover:scale-[1.02] text-left overflow-hidden"
+                        className="group relative p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 motion-safe:transition-all hover:scale-[1.02] active:scale-[0.98] text-left overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-indigo-500/20"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="text-4xl mb-4">📱</div>
-                        <h3 className="text-2xl font-bold mb-2">Single Device</h3>
-                        <p className="text-gray-400 text-sm">Pass the phone around. Perfect for small groups or quick games.</p>
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="text-5xl mb-5 filter drop-shadow-md group-hover:scale-110 motion-safe:transition-transform duration-300 origin-left">📱</div>
+                        <h3 className="text-2xl font-black mb-2 tracking-tight text-white">Single Device</h3>
+                        <p className="text-gray-400 text-sm font-medium leading-relaxed">Pass the phone around. Perfect for small groups or quick games.</p>
                     </button>
 
                     <button 
                         onClick={() => handleModeSelect('HOST')}
-                        className="group relative p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all hover:scale-[1.02] text-left overflow-hidden"
+                        className="group relative p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 motion-safe:transition-all hover:scale-[1.02] active:scale-[0.98] text-left overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-purple-500/20"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="text-4xl mb-4">📺</div>
-                        <h3 className="text-2xl font-bold mb-2">Host Party</h3>
-                        <p className="text-gray-400 text-sm">Use this device as the TV/Board. Players join with their phones.</p>
+                        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="text-5xl mb-5 filter drop-shadow-md group-hover:scale-110 motion-safe:transition-transform duration-300 origin-left">📺</div>
+                        <h3 className="text-2xl font-black mb-2 tracking-tight text-white">Host Party</h3>
+                        <p className="text-gray-400 text-sm font-medium leading-relaxed">Use this device as the TV/Board. Players join with their phones.</p>
                     </button>
                     
                     <button 
                         onClick={() => handleModeSelect('PLAYER')}
-                        className="md:col-span-2 group relative p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all hover:scale-[1.02] flex items-center gap-6 overflow-hidden"
+                        className="md:col-span-2 group relative p-6 sm:p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 motion-safe:transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-6 overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-green-500/20"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="text-4xl">👋</div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="text-5xl filter drop-shadow-md group-hover:scale-110 motion-safe:transition-transform duration-300 origin-left">👋</div>
                         <div>
-                            <h3 className="text-xl font-bold">Join Existing Party</h3>
-                            <p className="text-gray-400 text-sm">Enter a room code to join a game nearby.</p>
+                            <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-1">Join Existing Party</h3>
+                            <p className="text-gray-400 text-sm font-medium">Enter a room code to join a game nearby.</p>
                         </div>
                     </button>
                 </div>
@@ -414,12 +414,12 @@ function App() {
       {/* Dynamic Background */}
       {!settings.highContrast && (
         <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-900/20 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-900/20 rounded-full blur-[120px]" />
+          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-900/20 rounded-full blur-[120px] motion-safe:animate-pulse" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-900/20 rounded-full blur-[120px] motion-safe:animate-pulse" style={{ animationDelay: '2s' }} />
         </div>
       )}
 
-      <div className="relative z-10 w-full mx-auto px-4 flex flex-col h-[100dvh] transition-all duration-500 ease-in-out md:max-w-4xl lg:max-w-6xl">
+      <div className="relative z-10 w-full mx-auto px-4 sm:px-6 flex flex-col h-[100dvh] motion-safe:transition-all duration-500 ease-in-out md:max-w-4xl lg:max-w-6xl">
         {/* Header - Safe Area Top for Dynamic Island */}
         <header className="flex-none flex justify-between items-center z-50 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
            <div className="flex items-center gap-3" onClick={() => { 
@@ -429,10 +429,10 @@ function App() {
                else if(screen === 'SETUP') { setScreen('MODE_SELECT'); playSound('click'); }
                else { setScreen('MODE_SELECT'); playSound('click'); }
            }}>
-              <div className="w-11 h-11 bg-gradient-to-br from-indigo-500 to-pink-500 rounded-xl flex items-center justify-center font-bold text-white shadow-lg cursor-pointer transform hover:scale-105 transition-transform text-xl">
+              <div className="w-11 h-11 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-[14px] flex items-center justify-center font-black text-white shadow-lg cursor-pointer transform hover:scale-105 motion-safe:transition-transform text-xl border border-white/10">
                 P
               </div>
-              <span className="font-bold text-xl tracking-tight cursor-pointer hidden sm:block">PartyAI</span>
+              <span className="font-black text-2xl tracking-tight cursor-pointer hidden sm:block text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">PartyAI</span>
            </div>
 
            <div className="flex gap-3">

@@ -44,13 +44,13 @@ export const PartySettingsModal: React.FC<PartySettingsModalProps> = ({ isOpen, 
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => updateSetting('language', 'en')}
-              className={`p-3 rounded-xl border-2 font-bold transition-all ${settings.language === 'en' ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              className={`p-4 rounded-2xl border-2 font-bold transition-all active:scale-95 ${settings.language === 'en' ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
             >
               English
             </button>
             <button
               onClick={() => updateSetting('language', 'zh')}
-              className={`p-3 rounded-xl border-2 font-bold transition-all ${settings.language === 'zh' ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              className={`p-4 rounded-2xl border-2 font-bold transition-all active:scale-95 ${settings.language === 'zh' ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
             >
               简体中文
             </button>
@@ -65,7 +65,7 @@ export const PartySettingsModal: React.FC<PartySettingsModalProps> = ({ isOpen, 
               <button
                 key={theme.id}
                 onClick={() => updateSetting('theme', theme.id)}
-                className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${settings.theme === theme.id ? 'border-pink-500 bg-pink-500/20 text-pink-300 scale-105' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all active:scale-95 ${settings.theme === theme.id ? 'border-pink-500 bg-pink-500/20 text-pink-300 scale-105 shadow-[0_0_20px_rgba(236,72,153,0.2)]' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
               >
                 <span className="text-2xl">{theme.icon}</span>
                 <span className="text-xs font-bold">{theme.label[settings.language]}</span>
@@ -82,7 +82,7 @@ export const PartySettingsModal: React.FC<PartySettingsModalProps> = ({ isOpen, 
               <button
                 key={intensity.id}
                 onClick={() => updateSetting('intensity', intensity.id)}
-                className={`p-4 rounded-xl border-2 flex items-center gap-4 transition-all text-left ${settings.intensity === intensity.id ? 'border-orange-500 bg-orange-500/20 text-orange-300' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                className={`p-5 rounded-2xl border-2 flex items-center gap-4 transition-all active:scale-95 text-left ${settings.intensity === intensity.id ? 'border-orange-500 bg-orange-500/20 text-orange-300 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
               >
                 <span className="text-3xl">{intensity.icon}</span>
                 <div>
@@ -99,7 +99,7 @@ export const PartySettingsModal: React.FC<PartySettingsModalProps> = ({ isOpen, 
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Accessibility</h3>
           <button
             onClick={() => updateSetting('highContrast', !settings.highContrast)}
-            className={`w-full p-4 rounded-xl border-2 flex items-center justify-between transition-all ${settings.highContrast ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+            className={`w-full p-5 rounded-2xl border-2 flex items-center justify-between transition-all active:scale-95 ${settings.highContrast ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
           >
             <div className="flex items-center gap-4">
               <span className="text-3xl">👁️</span>

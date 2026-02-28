@@ -173,17 +173,17 @@ export const PlayerSetup: React.FC<PlayerSetupProps> = ({ onComplete, lang, init
   };
 
   return (
-    <div className="flex flex-col h-full animate-fade-in relative"> 
+    <div className="flex flex-col h-full motion-safe:animate-fade-in relative"> 
       
       {/* Header with Timer */}
-      <div className="flex-none pt-2 px-4 flex justify-between items-end mb-6">
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300 drop-shadow-sm leading-none">
+      <div className="flex-none pt-2 px-4 sm:px-6 flex justify-between items-end mb-6">
+        <h1 className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300 drop-shadow-sm leading-none tracking-tight">
           {t.setupTitle}
         </h1>
         {players.length >= 2 && (
             <div className="text-right">
                 <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Auto-start</div>
-                <div className={`text-2xl font-mono font-black leading-none ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-indigo-300'}`}>
+                <div className={`text-2xl sm:text-3xl font-mono font-black leading-none tracking-tighter ${timeLeft < 10 ? 'text-red-500 motion-safe:animate-pulse' : 'text-indigo-300'}`}>
                     {timeLeft}s
                 </div>
             </div>
@@ -191,11 +191,11 @@ export const PlayerSetup: React.FC<PlayerSetupProps> = ({ onComplete, lang, init
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-1">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-2 sm:px-4">
         
         <div className="space-y-6 pb-safe">
             {/* Form Card */}
-            <Card className="flex-none shadow-xl border-white/20 relative overflow-visible">
+            <Card className="flex-none shadow-2xl border-white/20 relative overflow-visible">
             <form onSubmit={handleAddPlayer} className="space-y-5">
                 
                 {/* Avatar Section */}
@@ -234,16 +234,16 @@ export const PlayerSetup: React.FC<PlayerSetupProps> = ({ onComplete, lang, init
                                     type="button"
                                     onClick={() => { setSelectedAvatar(emoji); setCustomAvatar(''); playSound('click'); }}
                                     className={`
-                                        w-20 h-20 text-5xl rounded-3xl transition-all duration-300 flex-shrink-0 snap-center flex items-center justify-center relative
+                                        w-20 h-20 text-5xl rounded-3xl motion-safe:transition-all duration-300 flex-shrink-0 snap-center flex items-center justify-center relative
                                         ${isSelected 
-                                            ? 'bg-gradient-to-br from-indigo-500 to-purple-600 ring-4 ring-indigo-400/50 ring-offset-2 ring-offset-[#1e293b] shadow-2xl shadow-indigo-500/50 scale-110 z-10' 
+                                            ? 'bg-gradient-to-br from-indigo-500 to-purple-600 ring-4 ring-indigo-400/50 ring-offset-2 ring-offset-[#1e293b] shadow-[0_0_30px_rgba(99,102,241,0.5)] scale-110 z-10' 
                                             : 'bg-white/5 hover:bg-white/10 grayscale-[0.3] hover:grayscale-0 hover:scale-105 active:scale-95'
                                         }
                                     `}
                                 >
                                     {emoji}
                                     {isSelected && (
-                                        <div className="absolute -top-2 -right-2 bg-white text-indigo-600 rounded-full w-6 h-6 flex items-center justify-center shadow-lg border-2 border-[#0f172a] animate-bounce">
+                                        <div className="absolute -top-2 -right-2 bg-white text-indigo-600 rounded-full w-6 h-6 flex items-center justify-center shadow-lg border-2 border-[#0f172a] motion-safe:animate-bounce">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                             </svg>

@@ -20,18 +20,18 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ players, isOpen, onClose
          {sortedPlayers.map((player, index) => (
            <div 
              key={player.id} 
-             className={`flex items-center justify-between p-4 rounded-xl border ${index === 0 ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-white/5 border-white/5'}`}
+             className={`flex items-center justify-between p-5 rounded-2xl border ${index === 0 ? 'bg-yellow-500/10 border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'bg-white/5 border-white/10'}`}
            >
              <div className="flex items-center gap-4">
-               <span className="font-mono text-lg text-gray-500 w-6">#{index + 1}</span>
+               <span className="font-mono text-xl text-gray-500 w-6 font-bold">#{index + 1}</span>
                <div className="flex flex-col">
-                 <span className="font-bold text-lg flex items-center gap-2">
-                   {player.avatar} {player.name}
+                 <span className="font-bold text-xl flex items-center gap-3">
+                   <span className="text-2xl">{player.avatar}</span> {player.name}
                  </span>
-                 {index === 0 && <span className="text-xs text-yellow-500 font-bold uppercase tracking-wider">Winning</span>}
+                 {index === 0 && <span className="text-xs text-yellow-500 font-black uppercase tracking-widest mt-1">Winning</span>}
                </div>
              </div>
-             <div className="text-2xl font-bold font-mono text-indigo-300">
+             <div className="text-3xl font-black font-mono text-indigo-300 tracking-tighter">
                {player.score}
              </div>
            </div>
