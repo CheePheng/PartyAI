@@ -3,19 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
-import { Player, CategoryRushRound, Language, GameType } from '../types';
+import { Player, CategoryRushRound, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateCategoryRush } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
 interface CategoryRushGameProps {
   players: Player[];
-  updateScore: (playerId: string, points: number) => void;
+  onUpdateScore: (playerId: string, points: number) => void;
+  onRoundComplete: (result: RoundResult) => void;
   onExit: () => void;
-  lang: Language;
+  settings: PartySettings;
 }
 
-export const CategoryRushGame: React.FC<CategoryRushGameProps> = ({ players, updateScore, onExit, lang }) => {
+export const CategoryRushGame: React.FC<CategoryRushGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [roundData, setRoundData] = useState<CategoryRushRound | null>(null);
   const [loading, setLoading] = useState(false);
   const [roundDuration, setRoundDuration] = useState(90);
@@ -23,6 +24,7 @@ export const CategoryRushGame: React.FC<CategoryRushGameProps> = ({ players, upd
   const [isPlaying, setIsPlaying] = useState(false);
   const [stage, setStage] = useState<'SETUP' | 'PLAYING' | 'SCORING'>('SETUP');
   
+  const lang = settings.language;
   const t = translations[lang];
 
   useEffect(() => {
@@ -45,8 +47,8 @@ export const CategoryRushGame: React.FC<CategoryRushGameProps> = ({ players, upd
   const startRound = async () => {
     playSound('click');
     setLoading(true);
-    const data = await generateCategoryRush(lang);
-    setRoundData(data);
+    const response = await generateCategoryRush(settings);
+    setRoundData(response.ok ? response.data : null);
     setLoading(false);
     setStage('PLAYING');
     setIsPlaying(true);
@@ -57,14 +59,18 @@ export const CategoryRushGame: React.FC<CategoryRushGameProps> = ({ players, upd
   const awardWinner = (winner: Player | null) => {
     playSound('success');
     
-    // Update everyone's "Played" count
+    const scores: Record<string, number> = {};
     players.forEach(p => {
-        if (winner && p.id === winner.id) {
-            updateScore(p.id, 5); // Winner gets 5 points
-        } else {
-            updateScore(p.id, 0); // Others get 0 points but "Played" increments
-        }
+        scores[p.id] = (winner && p.id === winner.id) ? 5 : 0;
     });
+
+    const result: RoundResult = {
+        gameType: GameType.SCATTERGORIES,
+        winners: winner ? [winner.id] : [],
+        scores: scores,
+        timestamp: Date.now()
+    };
+    onRoundComplete(result);
 
     setStage('SETUP');
     setRoundData(null);

@@ -26,7 +26,7 @@ export const GameMenu: React.FC<GameMenuProps> = ({ onSelectGame, onBack, lang }
 
        {/* Fixed Header Part */}
        <div className="flex-none flex items-center justify-between pb-6 pt-2 px-2 z-10">
-          <button onClick={() => { playSound('click'); onBack(); }} className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-bold group">
+          <button onClick={() => { playSound('click'); onBack(); }} className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-bold group min-h-[44px] px-2">
              <span className="group-hover:-translate-x-1 transition-transform">&larr;</span> {t.backToSetup}
           </button>
           <h2 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 tracking-tight">{t.chooseGame}</h2>
@@ -35,7 +35,7 @@ export const GameMenu: React.FC<GameMenuProps> = ({ onSelectGame, onBack, lang }
 
        {/* Scrollable Grid */}
        <div className="flex-1 overflow-y-auto scrollbar-hide pb-24 px-2 -mx-2">
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 px-2">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-2">
            {games.map((game, index) => (
              <button
                key={game.id}
@@ -62,7 +62,7 @@ export const GameMenu: React.FC<GameMenuProps> = ({ onSelectGame, onBack, lang }
                             playSound('click');
                             setSelectedRuleGame(game);
                         }}
-                        className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/20 hover:bg-white/10 text-gray-400 hover:text-white border border-white/5 transition-colors cursor-pointer z-20 backdrop-blur-sm"
+                        className="px-4 py-2 min-h-[44px] flex items-center justify-center rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/20 hover:bg-white/10 text-gray-400 hover:text-white border border-white/5 transition-colors cursor-pointer z-20 backdrop-blur-sm"
                     >
                         {t.rulesBtn}
                     </div>

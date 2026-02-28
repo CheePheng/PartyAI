@@ -3,19 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
-import { Player, WhoAmIWord, Language, GameType } from '../types';
+import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { Player, WhoAmIWord, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateWhoAmIWords } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
 interface WhoAmIGameProps {
   players: Player[];
-  updateScore: (playerId: string, points: number) => void;
+  onUpdateScore: (playerId: string, points: number) => void;
+  onRoundComplete: (result: RoundResult) => void;
   onExit: () => void;
-  lang: Language;
+  settings: PartySettings;
 }
 
-export const WhoAmIGame: React.FC<WhoAmIGameProps> = ({ players, updateScore, onExit, lang }) => {
+export const WhoAmIGame: React.FC<WhoAmIGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
   const [category, setCategory] = useState('');
   const [words, setWords] = useState<WhoAmIWord[]>([]);
@@ -25,9 +27,29 @@ export const WhoAmIGame: React.FC<WhoAmIGameProps> = ({ players, updateScore, on
   const [roundDuration, setRoundDuration] = useState(60);
   const [timer, setTimer] = useState(60);
   const [score, setScore] = useState(0);
+  const lang = settings.language;
   const t = translations[lang];
 
   const currentPlayer = players[currentPlayerIdx];
+
+  const endRound = () => {
+      playSound('error'); // Time up or finished
+      setGameState('SUMMARY');
+      
+      // Calculate final score for this round
+      const finalScore = score + (timer > 0 && currentIndex >= words.length ? 1 : 0);
+      
+      // Update session score
+      onUpdateScore(currentPlayer.id, finalScore);
+      
+      // Record stats
+      onRoundComplete({
+          gameType: GameType.WHO_AM_I,
+          winners: finalScore > 5 ? [currentPlayer.id] : [], // Arbitrary win threshold or just participation
+          scores: { [currentPlayer.id]: finalScore },
+          timestamp: Date.now()
+      });
+  };
 
   // Timer Effect
   useEffect(() => {
@@ -40,9 +62,7 @@ export const WhoAmIGame: React.FC<WhoAmIGameProps> = ({ players, updateScore, on
         });
       }, 1000);
     } else if (timer === 0 && gameState === 'PLAYING') {
-      playSound('error'); // Time up
-      setGameState('SUMMARY');
-      updateScore(currentPlayer.id, score);
+      endRound();
     }
     return () => clearInterval(interval);
   }, [gameState, timer]);
@@ -52,8 +72,8 @@ export const WhoAmIGame: React.FC<WhoAmIGameProps> = ({ players, updateScore, on
     playSound('click');
     setLoading(true);
     // Fetch enough words for a fast round
-    const data = await generateWhoAmIWords(category, 20, lang);
-    setWords(data);
+    const response = await generateWhoAmIWords(category, 20, settings);
+    setWords(response.ok && response.data ? response.data : []);
     setLoading(false);
     setGameState('READY');
   };
@@ -82,9 +102,7 @@ export const WhoAmIGame: React.FC<WhoAmIGameProps> = ({ players, updateScore, on
           setCurrentIndex(c => c + 1);
       } else {
           // Out of words, end round early
-          setGameState('SUMMARY');
-          updateScore(currentPlayer.id, score + (timer > 0 ? 1 : 0)); // Bonus for finishing early? Just base score.
-          updateScore(currentPlayer.id, 0); // Trigger score update
+          endRound();
       }
   };
 
@@ -145,16 +163,13 @@ export const WhoAmIGame: React.FC<WhoAmIGameProps> = ({ players, updateScore, on
 
   if (gameState === 'READY') {
       return (
-          <div className="flex flex-col h-full justify-center items-center text-center p-6 space-y-8 animate-fade-in">
-              <div className="text-8xl animate-bounce">📱</div>
-              <div>
-                  <h2 className="text-3xl font-bold mb-2">{t.placeOnForehead}</h2>
-                  <p className="text-gray-400">{t.whoAmIInstr}</p>
-              </div>
-              <Button size="lg" onClick={startGame} className="w-full max-w-sm py-6 text-xl animate-pulse">
-                  {t.startGuessing}
-              </Button>
-          </div>
+          <PassPhoneScreen 
+            playerName={currentPlayer.name}
+            onConfirm={startGame}
+            title={t.placeOnForehead}
+            subtitle={t.whoAmIInstr}
+            buttonText={t.startGuessing}
+          />
       );
   }
 

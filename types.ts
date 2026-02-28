@@ -1,5 +1,21 @@
 
+export interface RoundResult {
+  gameType: GameType;
+  winners: string[]; // Player IDs
+  scores: Record<string, number>; // Player ID -> Points
+  timestamp: number;
+}
+
 export type Language = 'en' | 'zh';
+export type Theme = 'default' | 'horror' | 'anime' | 'sports' | 'kpop' | 'sg_my';
+export type Intensity = 'family' | 'pg13' | 'spicy';
+
+export interface PartySettings {
+  language: Language;
+  theme: Theme;
+  intensity: Intensity;
+  highContrast: boolean;
+}
 
 export interface PlayerStats {
   wins: number;
@@ -27,6 +43,9 @@ export enum GameType {
   SCATTERGORIES = 'SCATTERGORIES',
   WHO_AM_I = 'WHO_AM_I',
   SECRET_CODE = 'SECRET_CODE',
+  WOULD_YOU_RATHER = 'WOULD_YOU_RATHER',
+  TWO_TRUTHS = 'TWO_TRUTHS',
+  NEVER_HAVE_I_EVER = 'NEVER_HAVE_I_EVER',
 }
 
 export interface GameDefinition {
@@ -104,4 +123,20 @@ export interface SecretCodeWord {
   word: string;
   type: 'RED' | 'BLUE' | 'NEUTRAL' | 'ASSASSIN';
   revealed: boolean;
+}
+
+export interface WouldYouRatherPrompt {
+  optionA: string;
+  optionB: string;
+}
+
+export interface TwoTruthsPrompt {
+  statement1: string;
+  statement2: string;
+  statement3: string;
+  lieIndex: number; // 0, 1, or 2
+}
+
+export interface NeverHaveIEverPrompt {
+  statement: string;
 }

@@ -53,6 +53,28 @@ export const PlayerSetup: React.FC<PlayerSetupProps> = ({ onComplete, lang, init
     return () => clearInterval(timer);
   }, [players, onComplete]);
 
+  // Load players from local storage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('partyai_players');
+    if (saved && initialPlayers.length === 0) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            setPlayers(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to load players", e);
+      }
+    }
+  }, []);
+
+  // Save players to local storage whenever they change
+  useEffect(() => {
+    if (players.length > 0) {
+        localStorage.setItem('partyai_players', JSON.stringify(players));
+    }
+  }, [players]);
+
   const handleAddPlayer = (e?: React.FormEvent) => {
     e?.preventDefault();
     setError('');
@@ -96,8 +118,34 @@ export const PlayerSetup: React.FC<PlayerSetupProps> = ({ onComplete, lang, init
     playSound('success');
   };
 
+  const handleQuickFill = () => {
+    const quickPlayers = [
+        { name: "Player 1", avatar: "🐶" },
+        { name: "Player 2", avatar: "🐱" },
+        { name: "Player 3", avatar: "🦊" },
+        { name: "Player 4", avatar: "🦁" }
+    ];
+    
+    const newPlayers = quickPlayers.map(p => ({
+        id: crypto.randomUUID(),
+        name: p.name,
+        score: 0,
+        avatar: p.avatar,
+        gamesPlayed: 0,
+        wins: 0,
+        stats: {}
+    }));
+    
+    setPlayers(newPlayers);
+    playSound('success');
+  };
+
   const removePlayer = (id: string) => {
-    setPlayers(players.filter(p => p.id !== id));
+    const newPlayers = players.filter(p => p.id !== id);
+    setPlayers(newPlayers);
+    if (newPlayers.length === 0) {
+        localStorage.removeItem('partyai_players');
+    }
     setTimeLeft(60); // Reset timer
     playSound('click');
   };
@@ -157,7 +205,7 @@ export const PlayerSetup: React.FC<PlayerSetupProps> = ({ onComplete, lang, init
                         <button 
                             type="button" 
                             onClick={() => { pickRandomAvatar(); playSound('click'); }}
-                            className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-gray-300 transition-colors"
+                            className="text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 min-h-[44px] rounded-xl text-gray-300 transition-colors"
                         >
                             🎲 Random
                         </button>
@@ -234,19 +282,30 @@ export const PlayerSetup: React.FC<PlayerSetupProps> = ({ onComplete, lang, init
                             {players.length}/10
                         </span>
                     </div>
-                    {players.length > 1 && (
-                        <button 
-                            onClick={shufflePlayers} 
-                            className="text-indigo-300 text-xs font-bold hover:text-white flex items-center gap-1 bg-white/5 px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                            🔀 Shuffle
-                        </button>
-                    )}
+                    <div className="flex gap-2">
+                        {players.length === 0 && (
+                            <button 
+                                onClick={handleQuickFill} 
+                                className="text-emerald-400 text-xs font-bold hover:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 px-4 py-2 min-h-[44px] rounded-xl transition-colors border border-emerald-500/20"
+                            >
+                                ⚡ Quick Fill
+                            </button>
+                        )}
+                        {players.length > 1 && (
+                            <button 
+                                onClick={shufflePlayers} 
+                                className="text-indigo-300 text-xs font-bold hover:text-white flex items-center gap-1 bg-white/5 px-4 py-2 min-h-[44px] rounded-xl transition-colors"
+                            >
+                                🔀 Shuffle
+                            </button>
+                        )}
+                    </div>
                 </div>
                 
                 {players.length === 0 && (
-                    <div className="text-center py-10 opacity-30 text-lg font-bold">
-                        Add players to start!
+                    <div className="text-center py-10 opacity-30 text-lg font-bold flex flex-col gap-2">
+                        <span>Add players to start!</span>
+                        <span className="text-xs font-normal">or use Quick Fill for instant party</span>
                     </div>
                 )}
 
@@ -266,7 +325,7 @@ export const PlayerSetup: React.FC<PlayerSetupProps> = ({ onComplete, lang, init
                             </div>
                             <button 
                                 onClick={() => removePlayer(player.id)}
-                                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                className="w-11 h-11 flex items-center justify-center rounded-full bg-white/5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                             >
                                 ✕
                             </button>

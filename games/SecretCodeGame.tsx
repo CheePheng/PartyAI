@@ -4,19 +4,21 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
 import { ErrorView } from '../components/ErrorView';
-import { Player, SecretCodeWord, Language, GameType } from '../types';
+import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { Player, SecretCodeWord, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateSecretCodeWords } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
 interface SecretCodeGameProps {
   players: Player[];
-  updateScore: (playerId: string, points: number) => void;
+  onUpdateScore: (playerId: string, points: number) => void;
+  onRoundComplete: (result: RoundResult) => void;
   onExit: () => void;
-  lang: Language;
+  settings: PartySettings;
 }
 
-export const SecretCodeGame: React.FC<SecretCodeGameProps> = ({ players, updateScore, onExit, lang }) => {
+export const SecretCodeGame: React.FC<SecretCodeGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [words, setWords] = useState<SecretCodeWord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -30,6 +32,7 @@ export const SecretCodeGame: React.FC<SecretCodeGameProps> = ({ players, updateS
   const [winner, setWinner] = useState<'RED' | 'BLUE' | null>(null);
   const [confirmReveal, setConfirmReveal] = useState(false);
   
+  const lang = settings.language;
   const t = translations[lang];
 
   // Logic to calculate remaining cards
@@ -41,9 +44,10 @@ export const SecretCodeGame: React.FC<SecretCodeGameProps> = ({ players, updateS
     setLoading(true);
     setError(false);
     
-    const generatedWords = await generateSecretCodeWords(lang);
+    const response = await generateSecretCodeWords(settings);
+    const generatedWords = response.ok ? response.data : null;
     
-    if (!generatedWords) {
+    if (!generatedWords || generatedWords.length < 25) {
         setLoading(false);
         setError(true);
         return;
@@ -93,8 +97,24 @@ export const SecretCodeGame: React.FC<SecretCodeGameProps> = ({ players, updateS
 
     if (clickedWord.type === 'ASSASSIN') {
         playSound('error');
-        setWinner(turn === 'RED' ? 'BLUE' : 'RED');
+        const winningTeam = turn === 'RED' ? 'BLUE' : 'RED';
+        setWinner(winningTeam);
         setPhase('GAME_OVER');
+
+        const winningPlayers = winningTeam === 'RED' ? redTeam : blueTeam;
+        const losingPlayers = winningTeam === 'RED' ? blueTeam : redTeam;
+
+        const result: RoundResult = {
+            gameType: GameType.SECRET_CODE,
+            winners: winningPlayers.map(p => p.id),
+            scores: {
+                ...winningPlayers.reduce((acc, p) => ({ ...acc, [p.id]: 10 }), {}),
+                ...losingPlayers.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {})
+            },
+            timestamp: Date.now()
+        };
+        onRoundComplete(result);
+
     } else if (clickedWord.type === 'NEUTRAL') {
         playSound('click');
         // End turn
@@ -119,10 +139,33 @@ export const SecretCodeGame: React.FC<SecretCodeGameProps> = ({ players, updateS
               setWinner('RED');
               setPhase('GAME_OVER');
               playSound('win');
+              
+              const result: RoundResult = {
+                  gameType: GameType.SECRET_CODE,
+                  winners: redTeam.map(p => p.id),
+                  scores: {
+                      ...redTeam.reduce((acc, p) => ({ ...acc, [p.id]: 10 }), {}),
+                      ...blueTeam.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {})
+                  },
+                  timestamp: Date.now()
+              };
+              onRoundComplete(result);
+
           } else if (b === 0) {
               setWinner('BLUE');
               setPhase('GAME_OVER');
               playSound('win');
+
+              const result: RoundResult = {
+                  gameType: GameType.SECRET_CODE,
+                  winners: blueTeam.map(p => p.id),
+                  scores: {
+                      ...blueTeam.reduce((acc, p) => ({ ...acc, [p.id]: 10 }), {}),
+                      ...redTeam.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {})
+                  },
+                  timestamp: Date.now()
+              };
+              onRoundComplete(result);
           }
       }
   }, [words, phase]);
@@ -225,14 +268,14 @@ export const SecretCodeGame: React.FC<SecretCodeGameProps> = ({ players, updateS
 
           {/* Confirm Reveal Overlay */}
           {confirmReveal && (
-              <div className="absolute inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
-                  <div className="text-4xl mb-4">⚠️</div>
-                  <h3 className="text-2xl font-bold text-white mb-2">{t.confirmReveal}</h3>
-                  <p className="text-gray-400 mb-6">{t.revealWarning}</p>
-                  <div className="flex gap-4 w-full max-w-xs">
-                      <Button variant="secondary" onClick={() => setConfirmReveal(false)} className="flex-1">Cancel</Button>
-                      <Button onClick={() => { setViewMode('SPYMASTER'); setConfirmReveal(false); }} className="flex-1">Reveal</Button>
-                  </div>
+              <div className="absolute inset-0 z-50 bg-black/90 flex flex-col items-center justify-center animate-fade-in">
+                  <PassPhoneScreen 
+                    playerName={turn === 'RED' ? (players.find(p => p.id === redSpymaster)?.name || 'Red Spymaster') : (players.find(p => p.id === blueSpymaster)?.name || 'Blue Spymaster')}
+                    onConfirm={() => { setViewMode('SPYMASTER'); setConfirmReveal(false); }}
+                    onCancel={() => setConfirmReveal(false)}
+                    title={t.confirmReveal}
+                    subtitle={t.revealWarning}
+                  />
               </div>
           )}
           

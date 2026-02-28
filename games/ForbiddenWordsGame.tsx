@@ -3,26 +3,30 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
-import { Player, ForbiddenWordsCard, Language, GameType } from '../types';
+import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { Player, ForbiddenWordsCard, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateForbiddenWords } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
 interface ForbiddenWordsGameProps {
   players: Player[];
-  updateScore: (playerId: string, points: number) => void;
+  onUpdateScore: (playerId: string, points: number) => void;
+  onRoundComplete: (result: RoundResult) => void;
   onExit: () => void;
-  lang: Language;
+  settings: PartySettings;
 }
 
-export const ForbiddenWordsGame: React.FC<ForbiddenWordsGameProps> = ({ players, updateScore, onExit, lang }) => {
+export const ForbiddenWordsGame: React.FC<ForbiddenWordsGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
   const [card, setCard] = useState<ForbiddenWordsCard | null>(null);
   const [loading, setLoading] = useState(false);
   const [roundDuration, setRoundDuration] = useState(60);
   const [timer, setTimer] = useState(60);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const [cardsPlayed, setCardsPlayed] = useState(0);
+  const lang = settings.language;
   const t = translations[lang];
 
   const currentPlayer = players[currentPlayerIdx];
@@ -46,8 +50,8 @@ export const ForbiddenWordsGame: React.FC<ForbiddenWordsGameProps> = ({ players,
   const drawCard = async () => {
     playSound('click');
     setLoading(true);
-    const newCard = await generateForbiddenWords(lang);
-    setCard(newCard);
+    const response = await generateForbiddenWords(settings);
+    setCard(response.ok ? response.data : null);
     setLoading(false);
   };
 
@@ -61,7 +65,13 @@ export const ForbiddenWordsGame: React.FC<ForbiddenWordsGameProps> = ({ players,
 
   const handleSuccess = async () => {
     playSound('success');
-    updateScore(currentPlayer.id, 10);
+    const result: RoundResult = {
+        gameType: GameType.FORBIDDEN_WORDS,
+        winners: [currentPlayer.id],
+        scores: { [currentPlayer.id]: 10 },
+        timestamp: Date.now()
+    };
+    onRoundComplete(result);
     setCardsPlayed(p => p + 1);
     await drawCard();
   };
@@ -69,13 +79,20 @@ export const ForbiddenWordsGame: React.FC<ForbiddenWordsGameProps> = ({ players,
   const handleSkip = async () => {
     playSound('error');
     // Record participation with 0 points
-    updateScore(currentPlayer.id, 0);
+    const result: RoundResult = {
+        gameType: GameType.FORBIDDEN_WORDS,
+        winners: [],
+        scores: { [currentPlayer.id]: 0 },
+        timestamp: Date.now()
+    };
+    onRoundComplete(result);
     await drawCard();
   };
 
   const finishTurn = () => {
     playSound('click');
     setIsPlaying(false);
+    setIsReady(false);
     setCard(null);
     setTimer(roundDuration);
     setCurrentPlayerIdx((prev) => (prev + 1) % players.length);
@@ -108,7 +125,7 @@ export const ForbiddenWordsGame: React.FC<ForbiddenWordsGameProps> = ({ players,
 
                 <div className="pt-4 border-t border-white/10 space-y-4">
                    <p className="text-lg">{t.nextPlayer}: <span className="font-bold text-purple-400 block text-2xl mt-1">{currentPlayer.name}</span></p>
-                   <Button onClick={startTurn} className="w-full text-lg shadow-xl shadow-purple-500/20">
+                   <Button onClick={() => { setIsReady(true); playSound('click'); }} className="w-full text-lg shadow-xl shadow-purple-500/20">
                       {t.startTimer}
                    </Button>
                 </div>
@@ -117,6 +134,17 @@ export const ForbiddenWordsGame: React.FC<ForbiddenWordsGameProps> = ({ players,
             <Button variant="ghost" onClick={onExit}>{t.exitGame}</Button>
         </div>
     );
+  }
+
+  if (isReady && !isPlaying) {
+      return (
+          <PassPhoneScreen 
+            playerName={currentPlayer.name}
+            onConfirm={startTurn}
+            title={`${t.handDevice} ${currentPlayer.name}`}
+            buttonText={t.startTimer}
+          />
+      );
   }
 
   // Gameplay Phase

@@ -3,19 +3,20 @@ import React, { useState } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
-import { Player, TriviaQuestion, Language, GameType } from '../types';
+import { Player, TriviaQuestion, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateTriviaQuestions } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
 interface TriviaGameProps {
   players: Player[];
-  updateScore: (playerId: string, points: number) => void;
+  onUpdateScore: (playerId: string, points: number) => void;
+  onRoundComplete: (result: RoundResult) => void;
   onExit: () => void;
-  lang: Language;
+  settings: PartySettings;
 }
 
-export const TriviaGame: React.FC<TriviaGameProps> = ({ players, updateScore, onExit, lang }) => {
+export const TriviaGame: React.FC<TriviaGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [topic, setTopic] = useState('');
   const [numQuestions, setNumQuestions] = useState(5);
   const [questions, setQuestions] = useState<TriviaQuestion[]>([]);
@@ -25,27 +26,38 @@ export const TriviaGame: React.FC<TriviaGameProps> = ({ players, updateScore, on
   const [gameState, setGameState] = useState<'SETUP' | 'PLAYING' | 'REVEAL' | 'FINISHED'>('SETUP');
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [activePlayerIndex, setActivePlayerIndex] = useState(0);
+  const lang = settings.language;
   const t = translations[lang];
 
   const activePlayer = players[activePlayerIndex];
   const currentQuestion = questions[currentQIndex];
 
-  const handleStart = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const generateQuestions = async () => {
     if (!topic.trim()) return;
     
     setLoading(true);
     setLoadingMsg(t.loadingTrivia);
     playSound('click');
-    const qs = await generateTriviaQuestions(topic, numQuestions, lang);
-    setQuestions(qs);
+    const response = await generateTriviaQuestions(topic, numQuestions, settings);
+    if (response.ok && response.data) {
+        setQuestions(response.data);
+    } else {
+        // Fallback should prevent this, but just in case
+        setQuestions([]); 
+    }
+    const qs = response.ok ? response.data : [];
     setLoading(false);
     
-    if (qs.length > 0) {
+    if (qs && qs.length > 0) {
       playSound('start');
       setGameState('PLAYING');
       setCurrentQIndex(0);
     }
+  };
+
+  const handleStart = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await generateQuestions();
   };
 
   const handleAnswer = (index: number) => {
@@ -53,14 +65,22 @@ export const TriviaGame: React.FC<TriviaGameProps> = ({ players, updateScore, on
     setSelectedOption(index);
     setGameState('REVEAL');
     
-    if (index === currentQuestion.answerIndex) {
+    const isCorrect = index === currentQuestion.answerIndex;
+    const points = isCorrect ? 10 : 0;
+
+    if (isCorrect) {
       playSound('success');
-      updateScore(activePlayer.id, 10);
     } else {
       playSound('error');
-      // Record participation with 0 points so stats track "Games Played" correctly
-      updateScore(activePlayer.id, 0);
     }
+
+    const result: RoundResult = {
+        gameType: GameType.TRIVIA,
+        winners: isCorrect ? [activePlayer.id] : [],
+        scores: { [activePlayer.id]: points },
+        timestamp: Date.now()
+    };
+    onRoundComplete(result);
   };
 
   const nextQuestion = () => {
@@ -121,12 +141,17 @@ export const TriviaGame: React.FC<TriviaGameProps> = ({ players, updateScore, on
 
   if (gameState === 'FINISHED') {
     return (
-      <div className="max-w-md mx-auto text-center space-y-6 flex flex-col justify-center min-h-[50vh]">
+      <div className="max-w-md mx-auto text-center space-y-6 flex flex-col justify-center min-h-[50vh] animate-fade-in">
         <h2 className="text-3xl font-bold">{t.roundComplete}</h2>
         <Card className="p-8">
           <div className="flex flex-col gap-4 justify-center">
-            <Button size="lg" onClick={() => setGameState('SETUP')}>{t.newTopic}</Button>
-            <Button variant="secondary" onClick={onExit}>{t.backToMenu}</Button>
+            <Button size="lg" onClick={generateQuestions} className="shadow-lg shadow-indigo-500/20">
+                🔄 Same Topic
+            </Button>
+            <Button variant="secondary" onClick={() => setGameState('SETUP')}>
+                ✨ New Topic
+            </Button>
+            <Button variant="ghost" onClick={onExit}>{t.backToMenu}</Button>
           </div>
         </Card>
       </div>
@@ -134,30 +159,30 @@ export const TriviaGame: React.FC<TriviaGameProps> = ({ players, updateScore, on
   }
 
   return (
-    <div className="max-w-xl mx-auto flex flex-col h-full relative">
-      <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl mb-4">
+    <div className="w-full max-w-4xl mx-auto flex flex-col h-full relative animate-fade-in">
+      <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl mb-4 border border-white/5">
         <div>
            <span className="text-xs font-bold uppercase tracking-widest text-gray-500">{t.actor}</span>
-           <div className="flex items-center gap-2 font-bold text-xl text-blue-300">
+           <div className="flex items-center gap-2 font-bold text-xl md:text-2xl text-blue-300">
              {activePlayer.avatar} {activePlayer.name}
            </div>
         </div>
         <div className="text-right">
           <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Q</span>
-          <div className="font-mono text-xl">{currentQIndex + 1}/{questions.length}</div>
+          <div className="font-mono text-xl md:text-2xl">{currentQIndex + 1}/{questions.length}</div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-48 scrollbar-hide">
-        <Card className="space-y-6 mb-4">
-            <div className="space-y-2">
+        <Card className="space-y-6 mb-4 border-white/10 shadow-2xl">
+            <div className="space-y-4">
             <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs font-bold rounded uppercase tracking-wider">
                 {currentQuestion.difficulty}
             </span>
-            <h3 className="text-2xl font-bold leading-tight">{currentQuestion.question}</h3>
+            <h3 className="text-2xl md:text-4xl font-black leading-tight tracking-tight">{currentQuestion.question}</h3>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {currentQuestion.options.map((opt, idx) => {
                 let btnClass = "text-left p-4 rounded-xl border-2 transition-all active:scale-[0.98] font-medium text-lg ";
                 

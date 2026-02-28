@@ -3,16 +3,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
-import { Player, PictionaryPrompt, Language, GameType } from '../types';
+import { Player, PictionaryPrompt, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generatePictionaryPrompt } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
 interface PictionaryGameProps {
   players: Player[];
-  updateScore: (playerId: string, points: number) => void;
+  onUpdateScore: (playerId: string, points: number) => void;
+  onRoundComplete: (result: RoundResult) => void;
   onExit: () => void;
-  lang: Language;
+  settings: PartySettings;
 }
 
 // Expanded Color Palette
@@ -31,7 +32,7 @@ const COLORS = [
   '#78350f', // Brown
 ];
 
-export const PictionaryGame: React.FC<PictionaryGameProps> = ({ players, updateScore, onExit, lang }) => {
+export const PictionaryGame: React.FC<PictionaryGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
   const [prompt, setPrompt] = useState<PictionaryPrompt | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,6 +56,7 @@ export const PictionaryGame: React.FC<PictionaryGameProps> = ({ players, updateS
   const [peeking, setPeeking] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
+  const lang = settings.language;
   const t = translations[lang];
   const currentPlayer = players[currentPlayerIdx];
 
@@ -101,8 +103,8 @@ export const PictionaryGame: React.FC<PictionaryGameProps> = ({ players, updateS
   const fetchCard = async () => {
     playSound('click');
     setLoading(true);
-    const newPrompt = await generatePictionaryPrompt(lang);
-    setPrompt(newPrompt);
+    const response = await generatePictionaryPrompt(settings);
+    setPrompt(response.ok ? response.data : null);
     setLoading(false);
     setShowPrompt(false);
     setIsPlaying(false);
@@ -126,13 +128,25 @@ export const PictionaryGame: React.FC<PictionaryGameProps> = ({ players, updateS
 
   const handleSuccess = () => {
     playSound('success');
-    updateScore(currentPlayer.id, 10); 
+    const result: RoundResult = {
+        gameType: GameType.PICTIONARY,
+        winners: [currentPlayer.id],
+        scores: { [currentPlayer.id]: 10 },
+        timestamp: Date.now()
+    };
+    onRoundComplete(result);
     nextTurn();
   };
 
   const handleSkip = () => {
     playSound('error');
-    updateScore(currentPlayer.id, 0); // Record participation but no points
+    const result: RoundResult = {
+        gameType: GameType.PICTIONARY,
+        winners: [],
+        scores: { [currentPlayer.id]: 0 },
+        timestamp: Date.now()
+    };
+    onRoundComplete(result);
     nextTurn();
   };
 

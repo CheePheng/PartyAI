@@ -3,19 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
-import { Player, DebatePrompt, Language, GameType } from '../types';
+import { Player, DebatePrompt, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateDebateTopic } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
 interface DebateGameProps {
   players: Player[];
-  updateScore: (playerId: string, points: number) => void;
+  onUpdateScore: (playerId: string, points: number) => void;
+  onRoundComplete: (result: RoundResult) => void;
   onExit: () => void;
-  lang: Language;
+  settings: PartySettings;
 }
 
-export const DebateGame: React.FC<DebateGameProps> = ({ players, updateScore, onExit, lang }) => {
+export const DebateGame: React.FC<DebateGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [topic, setTopic] = useState<DebatePrompt | null>(null);
   const [loading, setLoading] = useState(false);
   const [p1Index, setP1Index] = useState(0);
@@ -25,6 +26,7 @@ export const DebateGame: React.FC<DebateGameProps> = ({ players, updateScore, on
   const [timer, setTimer] = useState(60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   
+  const lang = settings.language;
   const t = translations[lang];
   const player1 = players[p1Index];
   const player2 = players[p2Index];
@@ -48,8 +50,8 @@ export const DebateGame: React.FC<DebateGameProps> = ({ players, updateScore, on
   const generate = async () => {
     playSound('click');
     setLoading(true);
-    const data = await generateDebateTopic(lang);
-    setTopic(data);
+    const response = await generateDebateTopic(settings);
+    setTopic(response.ok ? response.data : null);
     setLoading(false);
     setStage('DEBATING');
     setTimer(duration);
@@ -59,13 +61,21 @@ export const DebateGame: React.FC<DebateGameProps> = ({ players, updateScore, on
 
   const handleVote = (winnerIndex: number) => {
     playSound('win');
-    // Update winner with points
-    updateScore(players[winnerIndex].id, 5);
     
-    // Update loser with 0 points so it counts as "played"
-    // The loser is the one who isn't the winner
+    const winner = players[winnerIndex];
     const loserIndex = winnerIndex === p1Index ? p2Index : p1Index;
-    updateScore(players[loserIndex].id, 0);
+    const loser = players[loserIndex];
+
+    const result: RoundResult = {
+        gameType: GameType.DEBATE,
+        winners: [winner.id],
+        scores: {
+            [winner.id]: 5,
+            [loser.id]: 0
+        },
+        timestamp: Date.now()
+    };
+    onRoundComplete(result);
 
     setStage('SETUP');
     setTopic(null);

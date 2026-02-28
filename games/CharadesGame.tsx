@@ -3,19 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
-import { Player, CharadePrompt, Language, GameType } from '../types';
+import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { Player, CharadePrompt, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateCharades } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
 interface CharadesGameProps {
   players: Player[];
-  updateScore: (playerId: string, points: number) => void;
+  onUpdateScore: (playerId: string, points: number) => void;
+  onRoundComplete: (result: RoundResult) => void;
   onExit: () => void;
-  lang: Language;
+  settings: PartySettings;
 }
 
-export const CharadesGame: React.FC<CharadesGameProps> = ({ players, updateScore, onExit, lang }) => {
+export const CharadesGame: React.FC<CharadesGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
   const [prompt, setPrompt] = useState<CharadePrompt | null>(null);
   const [loading, setLoading] = useState(false);
@@ -23,6 +25,7 @@ export const CharadesGame: React.FC<CharadesGameProps> = ({ players, updateScore
   const [roundDuration, setRoundDuration] = useState(60);
   const [timer, setTimer] = useState<number>(60);
   const [isPlaying, setIsPlaying] = useState(false);
+  const lang = settings.language;
   const t = translations[lang];
 
   const currentPlayer = players[currentPlayerIdx];
@@ -47,8 +50,8 @@ export const CharadesGame: React.FC<CharadesGameProps> = ({ players, updateScore
   const fetchCard = async () => {
     playSound('click');
     setLoading(true);
-    const newPrompt = await generateCharades(lang);
-    setPrompt(newPrompt);
+    const response = await generateCharades(settings);
+    setPrompt(response.ok ? response.data : null);
     setLoading(false);
     setShowPrompt(false);
     setIsPlaying(false);
@@ -67,14 +70,25 @@ export const CharadesGame: React.FC<CharadesGameProps> = ({ players, updateScore
 
   const handleSuccess = () => {
     playSound('success');
-    updateScore(currentPlayer.id, 10); 
+    const result: RoundResult = {
+        gameType: GameType.CHARADES,
+        winners: [currentPlayer.id],
+        scores: { [currentPlayer.id]: 10 },
+        timestamp: Date.now()
+    };
+    onRoundComplete(result);
     nextTurn();
   };
 
   const handleSkip = () => {
     playSound('error');
-    // Record participation with 0 points
-    updateScore(currentPlayer.id, 0);
+    const result: RoundResult = {
+        gameType: GameType.CHARADES,
+        winners: [],
+        scores: { [currentPlayer.id]: 0 },
+        timestamp: Date.now()
+    };
+    onRoundComplete(result);
     nextTurn();
   };
 
@@ -135,11 +149,12 @@ export const CharadesGame: React.FC<CharadesGameProps> = ({ players, updateScore
 
       <Card className="flex-1 flex flex-col justify-center items-center text-center relative overflow-hidden min-h-[40vh]">
         {!showPrompt ? (
-           <div className="space-y-6 animate-fade-in">
-              <div className="text-7xl animate-bounce">🤫</div>
-              <p className="text-lg">{t.handDevice} <strong>{currentPlayer.name}</strong>.</p>
-              <Button onClick={startRound} size="lg" className="w-full">{t.iAm} {currentPlayer.name}, {t.revealWord}</Button>
-           </div>
+           <PassPhoneScreen 
+             playerName={currentPlayer.name}
+             onConfirm={startRound}
+             title={`${t.handDevice} ${currentPlayer.name}`}
+             buttonText={`${t.iAm} ${currentPlayer.name}, ${t.revealWord}`}
+           />
         ) : (
            <div className="w-full h-full flex flex-col justify-between space-y-6 animate-fade-in">
               <div>

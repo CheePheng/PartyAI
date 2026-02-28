@@ -3,18 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
-import { Player, ImpostorScenario, Language, GameType } from '../types';
+import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { Player, ImpostorScenario, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateImpostorScenario } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
 interface ImpostorGameProps {
   players: Player[];
+  onUpdateScore: (playerId: string, points: number) => void;
+  onRoundComplete: (result: RoundResult) => void;
   onExit: () => void;
-  lang: Language;
+  settings: PartySettings;
 }
 
-export const ImpostorGame: React.FC<ImpostorGameProps> = ({ players, onExit, lang }) => {
+export const ImpostorGame: React.FC<ImpostorGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [scenario, setScenario] = useState<ImpostorScenario | null>(null);
   const [loading, setLoading] = useState(false);
   const [playerRoles, setPlayerRoles] = useState<{playerId: string, role: string, isImpostor: boolean}[]>([]);
@@ -28,6 +31,7 @@ export const ImpostorGame: React.FC<ImpostorGameProps> = ({ players, onExit, lan
   const [gameActive, setGameActive] = useState(false);
   const [impostorCaught, setImpostorCaught] = useState(false);
 
+  const lang = settings.language;
   const t = translations[lang];
 
   useEffect(() => {
@@ -49,7 +53,14 @@ export const ImpostorGame: React.FC<ImpostorGameProps> = ({ players, onExit, lan
   const startGame = async () => {
     playSound('click');
     setLoading(true);
-    const data = await generateImpostorScenario(players.length, lang);
+    const response = await generateImpostorScenario(players.length, settings);
+    const data = response.ok ? response.data : null;
+    
+    if (!data) {
+        setLoading(false);
+        return;
+    }
+
     setScenario(data);
     
     const impostorIndex = Math.floor(Math.random() * players.length);
@@ -83,13 +94,30 @@ export const ImpostorGame: React.FC<ImpostorGameProps> = ({ players, onExit, lan
       if (targetRole?.isImpostor) {
           playSound('success');
           setImpostorCaught(true);
-          setPhase('GUESS_LOCATION'); // Impostor gets a chance to win
+          setPhase('GUESS_LOCATION'); 
+          // Impostor caught. They can still win if they guess location.
+          // We will handle scoring in the GUESS_LOCATION phase.
       } else {
           playSound('error');
-          // Reveal the real impostor immediately or just say "Wrong"?
-          // Typically game ends if innocents vote wrong.
           setImpostorCaught(false);
-          setPhase('GUESS_LOCATION'); // Skip to end screen logic, reusing state for simplicity in rendering
+          setPhase('GUESS_LOCATION'); 
+          
+          // Innocents voted wrong. Impostor wins immediately.
+          const impostor = players.find(p => playerRoles.find(pr => pr.playerId === p.id)?.isImpostor);
+          const innocents = players.filter(p => p.id !== impostor?.id);
+          
+          if (impostor) {
+             const result: RoundResult = {
+                gameType: GameType.IMPOSTOR,
+                winners: [impostor.id],
+                scores: {
+                    [impostor.id]: 10,
+                    ...innocents.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {})
+                },
+                timestamp: Date.now()
+            };
+            onRoundComplete(result);
+          }
       }
   };
 
@@ -142,21 +170,23 @@ export const ImpostorGame: React.FC<ImpostorGameProps> = ({ players, onExit, lan
     const currentPlayer = players[viewingIndex];
     const roleInfo = playerRoles[viewingIndex];
 
+    if (!isRevealed) {
+      return (
+        <PassPhoneScreen 
+          playerName={currentPlayer.name} 
+          onConfirm={() => { setIsRevealed(true); playSound('click'); }} 
+          title={`Pass device to ${currentPlayer.name}`}
+          buttonText={`I am ${currentPlayer.name}`}
+        />
+      );
+    }
+
     return (
       <div className="max-w-md mx-auto space-y-6 text-center animate-fade-in">
-        <h3 className="text-xl text-gray-400">{t.nextPlayer} {viewingIndex + 1} / {players.length}</h3>
-        <h2 className="text-3xl font-bold">{currentPlayer.name}</h2>
+        <h3 className="text-xl text-gray-400 font-bold uppercase tracking-widest">{t.nextPlayer}</h3>
+        <h2 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">{currentPlayer.name}</h2>
         
-        <Card className="min-h-[300px] flex flex-col justify-center items-center">
-           {!isRevealed ? (
-             <div className="space-y-6">
-               <div className="text-6xl">🔒</div>
-               <p>{t.handDevice} {currentPlayer.name}.</p>
-               <Button onClick={() => { setIsRevealed(true); playSound('click'); }} variant="secondary">
-                 {t.revealIdentity}
-               </Button>
-             </div>
-           ) : (
+        <Card className="min-h-[300px] flex flex-col justify-center items-center relative overflow-hidden">
              <div className="space-y-6 animate-fade-in w-full">
                 {roleInfo.isImpostor ? (
                   <div className="text-red-500">
@@ -178,7 +208,6 @@ export const ImpostorGame: React.FC<ImpostorGameProps> = ({ players, onExit, lan
                    {t.correctBtn}
                 </Button>
              </div>
-           )}
         </Card>
       </div>
     );

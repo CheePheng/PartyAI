@@ -11,6 +11,30 @@ interface LoadingViewProps {
 
 export const LoadingView: React.FC<LoadingViewProps> = ({ message, gameType, icon = '✨', className = '' }) => {
   
+  const [fact, setFact] = React.useState('');
+
+  React.useEffect(() => {
+    const facts = [
+      "Did you know? The first party game was likely 'Simon Says' in ancient Rome.",
+      "Fun Fact: Charades was originally a literary game in 18th century France.",
+      "Trivia: The word 'trivia' comes from Roman 'tri-via' (three roads meeting).",
+      "Tip: Acting silly increases your chances of winning by 200%.",
+      "Loading... The AI is reading the entire internet for you.",
+      "Wait for it... Greatness takes time (but not too much).",
+      "Did you know? Bananas are berries, but strawberries aren't.",
+      "Pro Tip: Speak clearly for the AI, but shout for dramatic effect.",
+      "Fact: Laughing burns calories. This game is a workout.",
+      "Generating fun... Please hold your applause."
+    ];
+    setFact(facts[Math.floor(Math.random() * facts.length)]);
+    
+    const interval = setInterval(() => {
+        setFact(facts[Math.floor(Math.random() * facts.length)]);
+    }, 4000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const renderAnimation = () => {
     switch (gameType) {
       case GameType.PICTIONARY:
@@ -102,6 +126,10 @@ export const LoadingView: React.FC<LoadingViewProps> = ({ message, gameType, ico
         {message}
       </h3>
       
+      <p className="mt-4 text-xs text-gray-400 max-w-xs mx-auto italic opacity-80 h-8 transition-opacity duration-500">
+        {fact}
+      </p>
+
       {/* Loading Dots */}
       <div className="mt-8 flex gap-2 justify-center opacity-80">
          <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>

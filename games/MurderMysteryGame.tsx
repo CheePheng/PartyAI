@@ -3,18 +3,21 @@ import React, { useState } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
-import { Player, MurderMysteryScenario, Language, GameType } from '../types';
+import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { Player, MurderMysteryScenario, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateMurderMystery } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
 interface MurderMysteryGameProps {
   players: Player[];
+  onUpdateScore: (playerId: string, points: number) => void;
+  onRoundComplete: (result: RoundResult) => void;
   onExit: () => void;
-  lang: Language;
+  settings: PartySettings;
 }
 
-export const MurderMysteryGame: React.FC<MurderMysteryGameProps> = ({ players, onExit, lang }) => {
+export const MurderMysteryGame: React.FC<MurderMysteryGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [scenario, setScenario] = useState<MurderMysteryScenario | null>(null);
   const [loading, setLoading] = useState(false);
   const [viewingIndex, setViewingIndex] = useState(-1);
@@ -22,12 +25,20 @@ export const MurderMysteryGame: React.FC<MurderMysteryGameProps> = ({ players, o
   const [phase, setPhase] = useState<'SETUP' | 'ROLES' | 'PLAY' | 'ACCUSE' | 'REVEAL'>('SETUP');
   const [selectedSuspect, setSelectedSuspect] = useState<string | null>(null);
   
+  const lang = settings.language;
   const t = translations[lang];
 
   const start = async () => {
     playSound('click');
     setLoading(true);
-    const data = await generateMurderMystery(players.length, lang);
+    const response = await generateMurderMystery(players.length, settings);
+    const data = response.ok ? response.data : null;
+
+    if (!data) {
+        setLoading(false);
+        return;
+    }
+
     setScenario(data);
     setLoading(false);
     setPhase('ROLES');
@@ -48,6 +59,41 @@ export const MurderMysteryGame: React.FC<MurderMysteryGameProps> = ({ players, o
       setSelectedSuspect(suspectId);
       setPhase('REVEAL');
       playSound('click');
+
+      if (!scenario) return;
+
+      const killerIndex = scenario.characters.findIndex(c => c.role === 'Killer');
+      const killer = players[killerIndex];
+      const isCorrect = players[killerIndex].id === suspectId;
+      
+      const innocents = players.filter(p => p.id !== killer.id);
+
+      let result: RoundResult;
+
+      if (isCorrect) {
+          // Innocents win
+          result = {
+              gameType: GameType.MURDER_MYSTERY,
+              winners: innocents.map(p => p.id),
+              scores: {
+                  ...innocents.reduce((acc, p) => ({ ...acc, [p.id]: 10 }), {}),
+                  [killer.id]: 0
+              },
+              timestamp: Date.now()
+          };
+      } else {
+          // Killer wins
+          result = {
+              gameType: GameType.MURDER_MYSTERY,
+              winners: [killer.id],
+              scores: {
+                  [killer.id]: 10,
+                  ...innocents.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {})
+              },
+              timestamp: Date.now()
+          };
+      }
+      onRoundComplete(result);
   };
 
   if (loading) return <LoadingView message={t.loadingMurder} gameType={GameType.MURDER_MYSTERY} />;
@@ -75,21 +121,23 @@ export const MurderMysteryGame: React.FC<MurderMysteryGameProps> = ({ players, o
     const currentPlayer = players[viewingIndex];
     const character = scenario.characters[viewingIndex];
 
+    if (!isRevealed) {
+      return (
+        <PassPhoneScreen 
+          playerName={currentPlayer.name} 
+          onConfirm={() => { setIsRevealed(true); playSound('click'); }} 
+          title={`${t.handDevice} ${currentPlayer.name}`}
+          buttonText={t.revealBtn}
+        />
+      );
+    }
+
     return (
       <div className="max-w-md mx-auto space-y-6 text-center">
         <h3 className="text-xl text-gray-400">{t.nextPlayer} {viewingIndex + 1} / {players.length}</h3>
         <h2 className="text-3xl font-bold">{currentPlayer.name}</h2>
 
         <Card className="min-h-[300px] flex flex-col justify-center items-center">
-          {!isRevealed ? (
-            <div className="space-y-6">
-              <div className="text-6xl">📁</div>
-              <p>{t.handDevice} {currentPlayer.name}.</p>
-              <Button onClick={() => { setIsRevealed(true); playSound('click'); }} variant="secondary">
-                {t.revealBtn}
-              </Button>
-            </div>
-          ) : (
             <div className="space-y-6 animate-fade-in text-left w-full">
               <div className="text-center">
                  <span className="text-xs uppercase tracking-widest text-gray-500">{t.impostorRole}</span>
@@ -117,7 +165,6 @@ export const MurderMysteryGame: React.FC<MurderMysteryGameProps> = ({ players, o
                 {viewingIndex < players.length - 1 ? t.nextPlayer : t.investigateBtn}
               </Button>
             </div>
-          )}
         </Card>
       </div>
     );
