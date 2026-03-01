@@ -5,12 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>PartyAI - Local Multiplayer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              theme: {
+                bg: 'var(--theme-bg)',
+                card: 'var(--theme-card)',
+                accent: 'var(--theme-accent)',
+                'accent-hover': 'var(--theme-accent-hover)',
+                text: 'var(--theme-text)',
+                muted: 'var(--theme-muted)',
+              }
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.4s ease-out forwards',
+              'slide-in': 'slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideIn: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --theme-bg: #0f172a;
+        --theme-card: #1e293b;
+        --theme-accent: #4f46e5;
+        --theme-accent-hover: #6366f1;
+        --theme-text: #ffffff;
+        --theme-muted: #94a3b8;
+      }
+      
+      [data-theme="horror"] {
+        --theme-bg: #0a0000;
+        --theme-card: #1a0505;
+        --theme-accent: #991b1b;
+        --theme-accent-hover: #b91c1c;
+        --theme-text: #fca5a5;
+        --theme-muted: #7f1d1d;
+      }
+
+      [data-theme="anime"] {
+        --theme-bg: #1a0b2e;
+        --theme-card: #2d1b4e;
+        --theme-accent: #d946ef;
+        --theme-accent-hover: #e879f9;
+        --theme-text: #fdf4ff;
+        --theme-muted: #c084fc;
+      }
+
+      [data-theme="sports"] {
+        --theme-bg: #064e3b;
+        --theme-card: #065f46;
+        --theme-accent: #f97316;
+        --theme-accent-hover: #fb923c;
+        --theme-text: #ecfdf5;
+        --theme-muted: #6ee7b7;
+      }
+
+      [data-theme="kpop"] {
+        --theme-bg: #170f1c;
+        --theme-card: #2d1b2e;
+        --theme-accent: #ec4899;
+        --theme-accent-hover: #f472b6;
+        --theme-text: #fce7f3;
+        --theme-muted: #fbcfe8;
+      }
+
+      [data-theme="sg_my"] {
+        --theme-bg: #1a0f0f;
+        --theme-card: #2a1515;
+        --theme-accent: #ef4444;
+        --theme-accent-hover: #f87171;
+        --theme-text: #fef2f2;
+        --theme-muted: #fca5a5;
+      }
+
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #0f172a;
-        color: white;
+        background-color: var(--theme-bg);
+        color: var(--theme-text);
         /* Prevent bounce scroll on mobile */
         overscroll-behavior-y: none;
         /* Disable text selection for app-like feel */
@@ -24,14 +111,14 @@
         height: 4px;
       }
       ::-webkit-scrollbar-track {
-        background: #1e293b;
+        background: var(--theme-card);
       }
       ::-webkit-scrollbar-thumb {
-        background: #4f46e5;
+        background: var(--theme-accent);
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #6366f1;
+        background: var(--theme-accent-hover);
       }
       /* Hide scrollbar for clean UI in horizontal lists */
       .scrollbar-hide::-webkit-scrollbar {

@@ -21,7 +21,7 @@ interface SecretCodeGameProps {
 export const SecretCodeGame: React.FC<SecretCodeGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [words, setWords] = useState<SecretCodeWord[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<'SETUP' | 'GAME' | 'GAME_OVER'>('SETUP');
   const [turn, setTurn] = useState<'RED' | 'BLUE'>('RED');
   const [viewMode, setViewMode] = useState<'PLAYER' | 'SPYMASTER'>('PLAYER');
@@ -42,14 +42,14 @@ export const SecretCodeGame: React.FC<SecretCodeGameProps> = ({ players, onUpdat
   const startGame = async () => {
     playSound('click');
     setLoading(true);
-    setError(false);
+    setError(null);
     
     const response = await generateSecretCodeWords(settings);
     const generatedWords = response.ok ? response.data : null;
     
     if (!generatedWords || generatedWords.length < 25) {
         setLoading(false);
-        setError(true);
+        setError("Failed to generate secret code words. Please try again.");
         return;
     }
 
@@ -186,7 +186,7 @@ export const SecretCodeGame: React.FC<SecretCodeGameProps> = ({ players, onUpdat
 
 
   if (loading) return <LoadingView message={t.loadingSecretCode} gameType={GameType.SECRET_CODE} />;
-  if (error) return <ErrorView onRetry={startGame} lang={lang} />;
+  if (error) return <ErrorView onRetry={startGame} lang={settings.language} message={error} />;
 
   if (phase === 'SETUP') {
       return (

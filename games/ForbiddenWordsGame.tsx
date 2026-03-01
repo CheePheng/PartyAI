@@ -4,8 +4,9 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
 import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { ErrorView } from '../components/ErrorView';
 import { Player, ForbiddenWordsCard, Language, GameType, RoundResult, PartySettings } from '../types';
-import { generateForbiddenWords } from '../services/geminiService';
+import { generateForbiddenWords, consumePrefetch, prefetchGame } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
@@ -21,6 +22,7 @@ export const ForbiddenWordsGame: React.FC<ForbiddenWordsGameProps> = ({ players,
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
   const [card, setCard] = useState<ForbiddenWordsCard | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [roundDuration, setRoundDuration] = useState(60);
   const [timer, setTimer] = useState(60);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -50,9 +52,26 @@ export const ForbiddenWordsGame: React.FC<ForbiddenWordsGameProps> = ({ players,
   const drawCard = async () => {
     playSound('click');
     setLoading(true);
+    setError(null);
+    
+    const prefetched = consumePrefetch<ForbiddenWordsCard>('forbidden_words', settings);
+    if (prefetched) {
+      setCard(prefetched);
+      setLoading(false);
+      prefetchGame('forbidden_words', settings);
+      return;
+    }
+
     const response = await generateForbiddenWords(settings);
-    setCard(response.ok ? response.data : null);
+    if (response.ok && response.data) {
+      setCard(response.data);
+      setError(null);
+    } else {
+      setCard(null);
+      setError("Failed to generate forbidden words card. Please try again.");
+    }
     setLoading(false);
+    if (response.ok) prefetchGame('forbidden_words', settings);
   };
 
   const startTurn = async () => {
@@ -94,12 +113,17 @@ export const ForbiddenWordsGame: React.FC<ForbiddenWordsGameProps> = ({ players,
     setIsPlaying(false);
     setIsReady(false);
     setCard(null);
+    setError(null);
     setTimer(roundDuration);
     setCurrentPlayerIdx((prev) => (prev + 1) % players.length);
   };
 
   if (loading && !card) { // Initial loading
     return <LoadingView message={t.loadingForbidden} gameType={GameType.FORBIDDEN_WORDS} />;
+  }
+
+  if (error) {
+    return <ErrorView onRetry={drawCard} lang={settings.language} message={error} />;
   }
 
   // Setup / Transition Phase

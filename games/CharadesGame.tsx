@@ -4,8 +4,9 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
 import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { ErrorView } from '../components/ErrorView';
 import { Player, CharadePrompt, Language, GameType, RoundResult, PartySettings } from '../types';
-import { generateCharades } from '../services/geminiService';
+import { generateCharades, consumePrefetch, prefetchGame } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
@@ -21,6 +22,7 @@ export const CharadesGame: React.FC<CharadesGameProps> = ({ players, onUpdateSco
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
   const [prompt, setPrompt] = useState<CharadePrompt | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [roundDuration, setRoundDuration] = useState(60);
   const [timer, setTimer] = useState<number>(60);
@@ -50,12 +52,36 @@ export const CharadesGame: React.FC<CharadesGameProps> = ({ players, onUpdateSco
   const fetchCard = async () => {
     playSound('click');
     setLoading(true);
+    setError(null);
+    
+    const prefetched = consumePrefetch<CharadePrompt>('charades', settings);
+    if (prefetched) {
+      setPrompt(prefetched);
+      setLoading(false);
+      setShowPrompt(false);
+      setIsPlaying(false);
+      setTimer(roundDuration);
+      
+      // Trigger next prefetch in background
+      prefetchGame('charades', settings);
+      return;
+    }
+
     const response = await generateCharades(settings);
-    setPrompt(response.ok ? response.data : null);
+    if (response.ok && response.data) {
+      setPrompt(response.data);
+      setError(null);
+    } else {
+      setPrompt(null);
+      setError("Failed to generate charades. Please try again.");
+    }
     setLoading(false);
     setShowPrompt(false);
     setIsPlaying(false);
     setTimer(roundDuration);
+    
+    // Trigger next prefetch in background
+    if (response.ok) prefetchGame('charades', settings);
   };
 
   const startRound = () => {
@@ -94,6 +120,7 @@ export const CharadesGame: React.FC<CharadesGameProps> = ({ players, onUpdateSco
 
   const nextTurn = () => {
     setPrompt(null);
+    setError(null);
     setShowPrompt(false);
     setIsPlaying(false);
     setTimer(roundDuration);
@@ -102,6 +129,10 @@ export const CharadesGame: React.FC<CharadesGameProps> = ({ players, onUpdateSco
 
   if (loading) {
       return <LoadingView message={t.loadingCharades} gameType={GameType.CHARADES} />;
+  }
+
+  if (error) {
+      return <ErrorView onRetry={fetchCard} lang={settings.language} message={error} />;
   }
 
   // Setup Phase (Before drawing card)

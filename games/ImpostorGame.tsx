@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
 import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { ErrorView } from '../components/ErrorView';
 import { Player, ImpostorScenario, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateImpostorScenario } from '../services/geminiService';
 import { translations } from '../utils/i18n';
@@ -20,6 +21,7 @@ interface ImpostorGameProps {
 export const ImpostorGame: React.FC<ImpostorGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [scenario, setScenario] = useState<ImpostorScenario | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [playerRoles, setPlayerRoles] = useState<{playerId: string, role: string, isImpostor: boolean}[]>([]);
   const [viewingIndex, setViewingIndex] = useState(-1);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -53,11 +55,13 @@ export const ImpostorGame: React.FC<ImpostorGameProps> = ({ players, onUpdateSco
   const startGame = async () => {
     playSound('click');
     setLoading(true);
+    setError(null);
     const response = await generateImpostorScenario(players.length, settings);
     const data = response.ok ? response.data : null;
     
     if (!data) {
         setLoading(false);
+        setError("Failed to generate scenario. Please try again.");
         return;
     }
 
@@ -129,6 +133,10 @@ export const ImpostorGame: React.FC<ImpostorGameProps> = ({ players, onUpdateSco
 
   if (loading) {
       return <LoadingView message={t.loadingImpostor} gameType={GameType.IMPOSTOR} />;
+  }
+
+  if (error) {
+      return <ErrorView onRetry={startGame} lang={settings.language} message={error} />;
   }
 
   if (phase === 'SETUP') {

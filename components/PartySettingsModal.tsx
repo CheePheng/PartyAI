@@ -40,17 +40,17 @@ export const PartySettingsModal: React.FC<PartySettingsModalProps> = ({ isOpen, 
       <div className="space-y-8">
         {/* Language */}
         <div className="space-y-3">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Language / 语言</h3>
+          <h3 className="text-sm font-bold text-theme-muted uppercase tracking-widest">Language / 语言</h3>
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => updateSetting('language', 'en')}
-              className={`p-4 rounded-2xl border-2 font-bold transition-all active:scale-95 ${settings.language === 'en' ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              className={`p-4 rounded-2xl border-2 font-bold transition-all active:scale-95 ${settings.language === 'en' ? 'border-theme-accent bg-theme-accent/20 text-theme-text shadow-[0_0_20px_var(--theme-accent-hover)]' : 'border-white/10 bg-white/5 text-theme-muted hover:bg-white/10'}`}
             >
               English
             </button>
             <button
               onClick={() => updateSetting('language', 'zh')}
-              className={`p-4 rounded-2xl border-2 font-bold transition-all active:scale-95 ${settings.language === 'zh' ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              className={`p-4 rounded-2xl border-2 font-bold transition-all active:scale-95 ${settings.language === 'zh' ? 'border-theme-accent bg-theme-accent/20 text-theme-text shadow-[0_0_20px_var(--theme-accent-hover)]' : 'border-white/10 bg-white/5 text-theme-muted hover:bg-white/10'}`}
             >
               简体中文
             </button>
@@ -59,13 +59,13 @@ export const PartySettingsModal: React.FC<PartySettingsModalProps> = ({ isOpen, 
 
         {/* Theme */}
         <div className="space-y-3">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Theme</h3>
+          <h3 className="text-sm font-bold text-theme-muted uppercase tracking-widest">Theme</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {THEMES.map(theme => (
               <button
                 key={theme.id}
                 onClick={() => updateSetting('theme', theme.id)}
-                className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all active:scale-95 ${settings.theme === theme.id ? 'border-pink-500 bg-pink-500/20 text-pink-300 scale-105 shadow-[0_0_20px_rgba(236,72,153,0.2)]' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all active:scale-95 ${settings.theme === theme.id ? 'border-theme-accent bg-theme-accent/20 text-theme-text scale-105 shadow-[0_0_20px_var(--theme-accent-hover)]' : 'border-white/10 bg-white/5 text-theme-muted hover:bg-white/10'}`}
               >
                 <span className="text-2xl">{theme.icon}</span>
                 <span className="text-xs font-bold">{theme.label[settings.language]}</span>
@@ -76,13 +76,13 @@ export const PartySettingsModal: React.FC<PartySettingsModalProps> = ({ isOpen, 
 
         {/* Intensity */}
         <div className="space-y-3">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Intensity</h3>
+          <h3 className="text-sm font-bold text-theme-muted uppercase tracking-widest">Intensity</h3>
           <div className="flex flex-col gap-3">
             {INTENSITIES.map(intensity => (
               <button
                 key={intensity.id}
                 onClick={() => updateSetting('intensity', intensity.id)}
-                className={`p-5 rounded-2xl border-2 flex items-center gap-4 transition-all active:scale-95 text-left ${settings.intensity === intensity.id ? 'border-orange-500 bg-orange-500/20 text-orange-300 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                className={`p-5 rounded-2xl border-2 flex items-center gap-4 transition-all active:scale-95 text-left ${settings.intensity === intensity.id ? 'border-theme-accent bg-theme-accent/20 text-theme-text shadow-[0_0_20px_var(--theme-accent-hover)]' : 'border-white/10 bg-white/5 text-theme-muted hover:bg-white/10'}`}
               >
                 <span className="text-3xl">{intensity.icon}</span>
                 <div>
@@ -96,10 +96,10 @@ export const PartySettingsModal: React.FC<PartySettingsModalProps> = ({ isOpen, 
 
         {/* Accessibility */}
         <div className="space-y-3">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Accessibility</h3>
+          <h3 className="text-sm font-bold text-theme-muted uppercase tracking-widest">Accessibility</h3>
           <button
             onClick={() => updateSetting('highContrast', !settings.highContrast)}
-            className={`w-full p-5 rounded-2xl border-2 flex items-center justify-between transition-all active:scale-95 ${settings.highContrast ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+            className={`w-full p-5 rounded-2xl border-2 flex items-center justify-between transition-all active:scale-95 ${settings.highContrast ? 'border-theme-accent bg-theme-accent/20 text-theme-text shadow-[0_0_20px_var(--theme-accent-hover)]' : 'border-white/10 bg-white/5 text-theme-muted hover:bg-white/10'}`}
           >
             <div className="flex items-center gap-4">
               <span className="text-3xl">👁️</span>
@@ -108,7 +108,7 @@ export const PartySettingsModal: React.FC<PartySettingsModalProps> = ({ isOpen, 
                 <div className="text-xs opacity-70">Improve readability</div>
               </div>
             </div>
-            <div className={`w-12 h-6 rounded-full transition-colors relative ${settings.highContrast ? 'bg-indigo-500' : 'bg-white/20'}`}>
+            <div className={`w-12 h-6 rounded-full transition-colors relative ${settings.highContrast ? 'bg-theme-accent' : 'bg-white/20'}`}>
               <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${settings.highContrast ? 'translate-x-6' : 'translate-x-0'}`} />
             </div>
           </button>

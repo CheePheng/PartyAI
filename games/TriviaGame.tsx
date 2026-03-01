@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
+import { ErrorView } from '../components/ErrorView';
 import { Player, TriviaQuestion, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateTriviaQuestions } from '../services/geminiService';
 import { translations } from '../utils/i18n';
@@ -22,6 +23,7 @@ export const TriviaGame: React.FC<TriviaGameProps> = ({ players, onUpdateScore, 
   const [questions, setQuestions] = useState<TriviaQuestion[]>([]);
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [gameState, setGameState] = useState<'SETUP' | 'PLAYING' | 'REVEAL' | 'FINISHED'>('SETUP');
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -36,23 +38,21 @@ export const TriviaGame: React.FC<TriviaGameProps> = ({ players, onUpdateScore, 
     if (!topic.trim()) return;
     
     setLoading(true);
+    setError(null);
     setLoadingMsg(t.loadingTrivia);
     playSound('click');
     const response = await generateTriviaQuestions(topic, numQuestions, settings);
     if (response.ok && response.data) {
         setQuestions(response.data);
+        setError(null);
+        playSound('start');
+        setGameState('PLAYING');
+        setCurrentQIndex(0);
     } else {
-        // Fallback should prevent this, but just in case
         setQuestions([]); 
+        setError("Failed to generate trivia questions. Please try again.");
     }
-    const qs = response.ok ? response.data : [];
     setLoading(false);
-    
-    if (qs && qs.length > 0) {
-      playSound('start');
-      setGameState('PLAYING');
-      setCurrentQIndex(0);
-    }
   };
 
   const handleStart = async (e: React.FormEvent) => {
@@ -98,6 +98,10 @@ export const TriviaGame: React.FC<TriviaGameProps> = ({ players, onUpdateScore, 
 
   if (loading) {
      return <LoadingView message={loadingMsg} gameType={GameType.TRIVIA} />;
+  }
+
+  if (error) {
+      return <ErrorView onRetry={generateQuestions} lang={settings.language} message={error} />;
   }
 
   if (gameState === 'SETUP') {

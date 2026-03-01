@@ -9,9 +9,7 @@ Powered by the Gemini API, PartyAI generates endless, context-aware, and highly 
 PartyAI is a web-based collection of classic and modern party games, supercharged by Generative AI. It acts as your virtual game master, generating prompts, scenarios, and questions tailored to your group's preferences.
 
 ### How it Plays at Home
-You can play PartyAI in two ways:
-1. **📱 Single Device (Pass & Play):** Perfect for small groups. Gather around a single phone or tablet, set up your players, and pass the device around when it's your turn. The app includes built-in "Pass the Phone" screens to keep secrets hidden!
-2. **📺 Host Party (Coming Soon / Experimental):** Cast the app to your TV or a large monitor. Players can join the room using their own phones via a room code to vote, guess, and interact.
+PartyAI is designed exclusively for **Single Device (Pass & Play)**. Perfect for small groups! Gather around a single phone or tablet, set up your players, and pass the device around when it's your turn. The app includes built-in "Pass the Phone" screens to keep secrets hidden!
 
 ## 🎲 Supported Games
 
@@ -82,12 +80,11 @@ PartyAI relies on Google's Gemini API to generate game content.
 
 *   **"API Key Missing" Error:** Ensure you have created a `.env` file in the root directory and that `GEMINI_API_KEY` is spelled correctly. Restart your dev server after changing `.env`.
 *   **Port 3000 is in use:** If another app is using port 3000, Vite might fail or pick a different port. You can kill the process using port 3000 or change the port in `vite.config.ts`.
-*   **Multiplayer not working:** The WebSocket server requires the full-stack setup (Express + Vite). Ensure you are running `npm run dev` which uses `tsx server.ts` to start both the backend and frontend.
 
 ## 🍕 Party-Night Tips
 
 To get the most out of PartyAI during your game night:
-*   **Cast to the Big Screen:** If playing Pass & Play, cast your phone screen to your TV so everyone can see the timer and scores!
+*   **Cast to the Big Screen:** Cast your phone screen to your TV so everyone can see the timer and scores!
 *   **Adjust the Intensity:** Use the Settings menu (⚙️) to change the "Prompt Intensity" from Family Friendly to Chaotic for wilder prompts.
 *   **Accessibility:** Playing in a dimly lit room? Turn on **High Contrast Mode** in the settings for better readability.
 *   **Turn on Sound & Haptics:** The app features sound effects and haptic feedback (vibrations) for a more immersive experience. Make sure your phone isn't on silent!
@@ -95,7 +92,6 @@ To get the most out of PartyAI during your game night:
 ## 🗺️ Roadmap
 
 We are constantly looking to improve PartyAI. Here's what's coming next:
-- [ ] **Full Multiplayer Support:** Stable WebSockets for 10+ players to join via room codes.
 - [ ] **Custom Avatars:** Let players upload their own selfies instead of using emojis.
 - [ ] **More Languages:** Expand beyond English and Chinese (Spanish, French, etc.).
 - [ ] **Game History:** Save your funniest moments and debates to a "Hall of Fame".

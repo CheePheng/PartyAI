@@ -46,8 +46,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ players, onClose }) => {
 
   const sortedPlayers = [...players].sort((a, b) => {
       // Sort by total wins
-      const winsA = Object.values(a.stats || {}).reduce((sum, s) => sum + (s?.wins || 0), 0);
-      const winsB = Object.values(b.stats || {}).reduce((sum, s) => sum + (s?.wins || 0), 0);
+      const winsA: number = Object.values(a.stats || {}).reduce((sum: number, s: any) => sum + (s?.wins || 0), 0) as number;
+      const winsB: number = Object.values(b.stats || {}).reduce((sum: number, s: any) => sum + (s?.wins || 0), 0) as number;
       return winsB - winsA;
   });
 
@@ -63,8 +63,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ players, onClose }) => {
             {sortedPlayers.map((player, idx) => {
                 const badges = getBadges(player);
                 const stats = player.stats || {};
-                const totalWins = Object.values(stats).reduce((sum, s) => sum + (s?.wins || 0), 0);
-                const totalGames = Object.values(stats).reduce((sum, s) => sum + (s?.played || 0), 0);
+                const totalWins: number = Object.values(stats).reduce((sum: number, s: any) => sum + (s?.wins || 0), 0) as number;
+                const totalGames: number = Object.values(stats).reduce((sum: number, s: any) => sum + (s?.played || 0), 0) as number;
                 const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
 
                 return (
@@ -97,12 +97,13 @@ export const StatsView: React.FC<StatsViewProps> = ({ players, onClose }) => {
                         {/* Detailed Stats Grid */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
                             {Object.entries(stats).map(([gameType, stat]) => {
-                                if (!stat || stat.played === 0) return null;
+                                const s = stat as any;
+                                if (!s || s.played === 0) return null;
                                 return (
                                     <div key={gameType} className="text-xs bg-black/20 p-3 rounded-xl border border-white/5">
                                         <div className="font-bold text-gray-300 mb-1 capitalize tracking-wide">{gameType.toLowerCase().replace('_', ' ')}</div>
                                         <div className="text-gray-500 font-mono">
-                                            {stat.wins}W - {stat.played}P
+                                            {s.wins}W - {s.played}P
                                         </div>
                                     </div>
                                 );

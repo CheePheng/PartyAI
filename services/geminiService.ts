@@ -9,8 +9,8 @@ const MODEL_NAME = 'gemini-3-flash-preview';
 // --- TYPES & UTILS ---
 
 export type ServiceResponse<T> = 
-  | { ok: true; data: T } 
-  | { ok: false; errorCode: string; error?: any };
+  | { ok: true; data: T; source: 'ai' | 'cache' | 'fallback'; attempts: number } 
+  | { ok: false; errorCode: string; error?: any; attempts: number };
 
 const langInstr = (lang: Language) => lang === 'zh' ? "Respond in Simplified Chinese (zh-CN)." : "Respond in English.";
 
@@ -35,7 +35,10 @@ const COMMON_SYSTEM_INSTRUCTION = "You are a fun, creative party game master. Ge
 const CACHE_PREFIX = 'gemini_cache_v1_';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
+const memoryCache = new Map<string, any>();
+
 function getFromCache<T>(key: string): T | null {
+  if (memoryCache.has(key)) return memoryCache.get(key);
   try {
     const item = localStorage.getItem(CACHE_PREFIX + key);
     if (!item) return null;
@@ -45,6 +48,7 @@ function getFromCache<T>(key: string): T | null {
       localStorage.removeItem(CACHE_PREFIX + key);
       return null;
     }
+    memoryCache.set(key, parsed.data);
     return parsed.data;
   } catch (e) {
     return null;
@@ -52,6 +56,7 @@ function getFromCache<T>(key: string): T | null {
 }
 
 function setCache<T>(key: string, data: T) {
+  memoryCache.set(key, data);
   try {
     const item = { timestamp: Date.now(), data };
     localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(item));
@@ -66,7 +71,7 @@ async function generateWithRetry<T>(
   prompt: string,
   schema: Schema,
   validator: (data: any) => boolean,
-  fallbackData: T,
+  fallbackData: T | null,
   retries = 2,
   systemInstruction?: string
 ): Promise<ServiceResponse<T>> {
@@ -74,12 +79,14 @@ async function generateWithRetry<T>(
   const cached = getFromCache<T>(cacheKey);
   if (cached) {
     console.log(`[Gemini] Cache hit for ${cacheKey}`);
-    return { ok: true, data: cached };
+    return { ok: true, data: cached, source: 'cache', attempts: 0 };
   }
 
   // 2. Try AI Generation
   let lastError: any;
+  let attempts = 0;
   for (let i = 0; i <= retries; i++) {
+    attempts++;
     try {
       console.log(`[Gemini] Attempt ${i + 1}/${retries + 1} for ${cacheKey}`);
       
@@ -105,7 +112,7 @@ async function generateWithRetry<T>(
 
       // 4. Success -> Cache & Return
       setCache(cacheKey, data);
-      return { ok: true, data };
+      return { ok: true, data, source: 'ai', attempts };
 
     } catch (err) {
       console.warn(`[Gemini] Attempt ${i + 1} failed:`, err);
@@ -121,9 +128,11 @@ async function generateWithRetry<T>(
 
   // 5. Fallback
   console.error(`[Gemini] All attempts failed for ${cacheKey}. Using fallback.`, lastError);
-  // We return OK with fallback data so the game can continue.
-  // Ideally we might want to signal it's fallback, but for "robustness" we just want it to work.
-  return { ok: true, data: fallbackData };
+  if (fallbackData !== null) {
+    return { ok: true, data: fallbackData, source: 'fallback', attempts };
+  }
+  
+  return { ok: false, errorCode: 'GENERATION_FAILED', error: lastError, attempts };
 }
 
 // --- VALIDATORS ---
@@ -154,19 +163,26 @@ const validateDebate = (data: any): boolean => {
   return isNonEmptyString(data.topic) && isNonEmptyString(data.sideA) && isNonEmptyString(data.sideB);
 };
 
-const validateImpostor = (data: any): boolean => {
+const validateImpostor = (playerCount: number) => (data: any): boolean => {
   return isNonEmptyString(data.location) && 
          Array.isArray(data.roles) && 
-         data.roles.length > 0 &&
+         data.roles.length >= playerCount - 1 &&
          data.roles.every(isNonEmptyString);
 };
 
-const validateMurderMystery = (data: any): boolean => {
-  return isNonEmptyString(data.title) && 
-         isNonEmptyString(data.intro) && 
-         Array.isArray(data.characters) && 
-         data.characters.length > 0 &&
-         data.characters.every((c: any) => isNonEmptyString(c.name) && isNonEmptyString(c.role));
+const validateMurderMystery = (playerCount: number) => (data: any): boolean => {
+  if (!(isNonEmptyString(data.title) && 
+        isNonEmptyString(data.intro) && 
+        Array.isArray(data.characters) && 
+        data.characters.length === playerCount &&
+        data.characters.every((c: any) => isNonEmptyString(c.name) && isNonEmptyString(c.role)))) {
+      return false;
+  }
+  
+  const killers = data.characters.filter((c: any) => c.role === 'Killer');
+  const detectives = data.characters.filter((c: any) => c.role === 'Detective');
+  
+  return killers.length === 1 && detectives.length === 1;
 };
 
 const validatePictionary = (data: any): boolean => {
@@ -185,7 +201,9 @@ const validateWhoAmI = (data: any): boolean => {
 };
 
 const validateSecretCode = (data: any): boolean => {
-  return Array.isArray(data) && data.length > 0 && data.every(isNonEmptyString);
+  if (!Array.isArray(data) || data.length !== 25 || !data.every(isNonEmptyString)) return false;
+  const uniqueWords = new Set(data.map((w: string) => w.toLowerCase()));
+  return uniqueWords.size === 25;
 };
 
 const validateWouldYouRather = (data: any): boolean => {
@@ -252,7 +270,7 @@ export const generateCharades = async (settings: PartySettings, category: string
   const fallback = Fallbacks.FALLBACK_CHARADES[Math.floor(Math.random() * Fallbacks.FALLBACK_CHARADES.length)];
 
   return generateWithRetry<CharadePrompt>(
-    `charades_${category}_${settings.language}_${settings.theme}_${settings.intensity}`,
+    `charades_${category}_${settings.language}_${settings.theme}_${settings.intensity}_${Date.now()}`,
     `Generate a fun charades prompt for the category "${category}". ${langInstr(settings.language)} ${getThemeAndIntensityInstr(settings)} The phrase must be actable, not too long, and require no props. The hint must be helpful but must NOT contain any words from the phrase itself. Difficulty must be 'Easy', 'Medium', 'Hard', or 'Extreme'.`,
     schema,
     validateCharades,
@@ -276,7 +294,7 @@ export const generateForbiddenWords = async (settings: PartySettings): Promise<S
   const fallback = Fallbacks.FALLBACK_FORBIDDEN[Math.floor(Math.random() * Fallbacks.FALLBACK_FORBIDDEN.length)];
 
   return generateWithRetry<ForbiddenWordsCard>(
-    `forbidden_${settings.language}_${settings.theme}_${settings.intensity}`,
+    `forbidden_${settings.language}_${settings.theme}_${settings.intensity}_${Date.now()}`,
     `Generate a 'Taboo' style game card. ${langInstr(settings.language)} ${getThemeAndIntensityInstr(settings)} Provide 1 target word and exactly 4 forbidden words highly associated with it. The forbidden words MUST NOT contain the target word or any exact substring of it. Difficulty must be 'Easy', 'Medium', or 'Hard'.`,
     schema,
     validateForbidden,
@@ -300,7 +318,7 @@ export const generateDebateTopic = async (settings: PartySettings): Promise<Serv
   const fallback = Fallbacks.FALLBACK_DEBATE[Math.floor(Math.random() * Fallbacks.FALLBACK_DEBATE.length)];
 
   return generateWithRetry<DebatePrompt>(
-    `debate_${settings.language}_${settings.theme}_${settings.intensity}`,
+    `debate_${settings.language}_${settings.theme}_${settings.intensity}_${Date.now()}`,
     `Generate a hilarious, low-stakes debate topic (e.g., 'Is a hotdog a sandwich?'). ${langInstr(settings.language)} ${getThemeAndIntensityInstr(settings)} The topic should be fun and lighthearted. Provide two distinct, opposing sides (sideA and sideB) for players to argue.`,
     schema,
     validateDebate,
@@ -334,7 +352,7 @@ export const generateImpostorScenario = async (playerCount: number, settings: Pa
     `impostor_${playerCount}_${settings.language}_${settings.theme}_${settings.intensity}`,
     `Generate a location and exactly ${playerCount - 1} distinct roles for a Spyfall-style game. ${langInstr(settings.language)} ${getThemeAndIntensityInstr(settings)} The location should be recognizable and not too niche (e.g., 'Supermarket', 'Pirate Ship'). The roles must be distinct and fit naturally within the location.`,
     schema,
-    validateImpostor,
+    validateImpostor(playerCount),
     fallback,
     2,
     COMMON_SYSTEM_INSTRUCTION
@@ -372,7 +390,7 @@ export const generateMurderMystery = async (playerCount: number, settings: Party
     `murder_mystery_${playerCount}_${settings.language}_${settings.theme}_${settings.intensity}`,
     `Create a murder mystery scenario for exactly ${playerCount} players. ${langInstr(settings.language)} ${getThemeAndIntensityInstr(settings)} There must be exactly 1 'Killer', exactly 1 'Detective', and the rest must be 'Suspect's. Provide a catchy title and a brief intro. Each character must have a unique name, a public bio, and unique secret info that provides clues or motives.`,
     schema,
-    validateMurderMystery,
+    validateMurderMystery(playerCount),
     fallback,
     2,
     COMMON_SYSTEM_INSTRUCTION
@@ -393,7 +411,7 @@ export const generatePictionaryPrompt = async (settings: PartySettings): Promise
   const fallback = Fallbacks.FALLBACK_PICTIONARY[Math.floor(Math.random() * Fallbacks.FALLBACK_PICTIONARY.length)];
 
   return generateWithRetry<PictionaryPrompt>(
-    `pictionary_${settings.language}_${settings.theme}_${settings.intensity}`,
+    `pictionary_${settings.language}_${settings.theme}_${settings.intensity}_${Date.now()}`,
     `Generate a word or phrase suitable for Pictionary (drawing game) in the category "random". ${langInstr(settings.language)} ${getThemeAndIntensityInstr(settings)} It must be a concrete noun, action, or common idiom that is easily drawable within 60 seconds. Difficulty must be 'Easy', 'Medium', or 'Hard'.`,
     schema,
     validatePictionary,
@@ -539,5 +557,43 @@ export const generateNeverHaveIEver = async (settings: PartySettings): Promise<S
     2,
     COMMON_SYSTEM_INSTRUCTION
   );
+};
+
+// --- PREFETCH PIPELINE ---
+
+export const prefetchGame = async (gameId: string, settings: PartySettings, options?: any) => {
+  const qKey = `prefetch_${gameId}_${settings.language}_${settings.theme}_${settings.intensity}_${JSON.stringify(options || {})}`;
+  let queue = getFromCache<any[]>(qKey) || [];
+  if (queue.length >= 1) return; // Already prefetched
+
+  let res;
+  switch (gameId) {
+    case 'charades': res = await generateCharades(settings, options?.category); break;
+    case 'pictionary': res = await generatePictionaryPrompt(settings); break;
+    case 'would_you_rather': res = await generateWouldYouRather(settings); break;
+    case 'forbidden_words': res = await generateForbiddenWords(settings); break;
+    case 'debate': res = await generateDebateTopic(settings); break;
+    case 'two_truths': res = await generateTwoTruths(settings); break;
+    case 'never_have_i_ever': res = await generateNeverHaveIEver(settings); break;
+  }
+
+  if (res && res.ok) {
+    queue = getFromCache<any[]>(qKey) || [];
+    queue.push(res.data);
+    setCache(qKey, queue);
+    console.log(`[Prefetch] Cached 1 item for ${gameId}`);
+  }
+};
+
+export const consumePrefetch = <T>(gameId: string, settings: PartySettings, options?: any): T | null => {
+  const qKey = `prefetch_${gameId}_${settings.language}_${settings.theme}_${settings.intensity}_${JSON.stringify(options || {})}`;
+  let queue = getFromCache<any[]>(qKey) || [];
+  if (queue.length > 0) {
+    const item = queue.shift();
+    setCache(qKey, queue);
+    console.log(`[Prefetch] Consumed 1 item for ${gameId}`);
+    return item as T;
+  }
+  return null;
 };
 

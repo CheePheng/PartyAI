@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Player, PartySettings, TwoTruthsPrompt, GameType, RoundResult } from '../types';
-import { generateTwoTruths } from '../services/geminiService';
+import { generateTwoTruths, consumePrefetch, prefetchGame } from '../services/geminiService';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { ErrorView } from '../components/ErrorView';
 import { playSound } from '../utils/sound';
 
 interface TwoTruthsGameProps {
@@ -17,6 +18,7 @@ interface TwoTruthsGameProps {
 export const TwoTruthsGame: React.FC<TwoTruthsGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [prompt, setPrompt] = useState<TwoTruthsPrompt | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [votes, setVotes] = useState<Record<string, number>>({});
   const [showResults, setShowResults] = useState(false);
   const [mode, setMode] = useState<'AI' | 'PLAYER'>('AI');
@@ -32,13 +34,28 @@ export const TwoTruthsGame: React.FC<TwoTruthsGameProps> = ({ players, onUpdateS
 
   const fetchPrompt = async () => {
     setLoading(true);
+    setError(null);
     setShowResults(false);
     setVotes({});
+    
+    const prefetched = consumePrefetch<TwoTruthsPrompt>('two_truths', settings);
+    if (prefetched) {
+      setPrompt(prefetched);
+      setLoading(false);
+      prefetchGame('two_truths', settings);
+      return;
+    }
+
     const res = await generateTwoTruths(settings);
-    if (res.ok) {
+    if (res.ok && res.data) {
       setPrompt(res.data);
+      setError(null);
+    } else {
+      setPrompt(null);
+      setError("Failed to generate two truths and a lie. Please try again.");
     }
     setLoading(false);
+    if (res.ok) prefetchGame('two_truths', settings);
   };
 
   useEffect(() => {
@@ -185,7 +202,11 @@ export const TwoTruthsGame: React.FC<TwoTruthsGameProps> = ({ players, onUpdateS
     );
   }
 
-  if (!prompt) return <div>Failed to load.</div>;
+  if (error && mode === 'AI') {
+    return <ErrorView onRetry={fetchPrompt} lang={settings.language} message={error} />;
+  }
+
+  if (!prompt) return null;
 
   const statements = [prompt.statement1, prompt.statement2, prompt.statement3];
 

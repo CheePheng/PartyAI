@@ -7,11 +7,12 @@ import { Language } from '../types';
 
 interface ErrorViewProps {
   onRetry: () => void;
+  onFallback?: () => void;
   lang: Language;
   message?: string;
 }
 
-export const ErrorView: React.FC<ErrorViewProps> = ({ onRetry, lang, message }) => {
+export const ErrorView: React.FC<ErrorViewProps> = ({ onRetry, onFallback, lang, message }) => {
   const t = translations[lang];
 
   return (
@@ -24,9 +25,16 @@ export const ErrorView: React.FC<ErrorViewProps> = ({ onRetry, lang, message }) 
         <p className="text-gray-300 mb-8 leading-relaxed font-medium">
           {message || t.errorDesc}
         </p>
-        <Button onClick={onRetry} variant="danger" className="w-full text-lg py-4 shadow-xl shadow-red-500/20">
-          {t.retryBtn}
-        </Button>
+        <div className="flex flex-col gap-3 w-full">
+          <Button onClick={onRetry} variant="danger" className="w-full text-lg py-4 shadow-xl shadow-red-500/20">
+            {t.retryBtn}
+          </Button>
+          {onFallback && (
+            <Button onClick={onFallback} variant="secondary" className="w-full text-lg py-4">
+              Use Fallback
+            </Button>
+          )}
+        </div>
       </Card>
     </div>
   );

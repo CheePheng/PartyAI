@@ -3,8 +3,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
+import { ErrorView } from '../components/ErrorView';
 import { Player, PictionaryPrompt, Language, GameType, RoundResult, PartySettings } from '../types';
-import { generatePictionaryPrompt } from '../services/geminiService';
+import { generatePictionaryPrompt, consumePrefetch, prefetchGame } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
@@ -36,6 +37,7 @@ export const PictionaryGame: React.FC<PictionaryGameProps> = ({ players, onUpdat
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
   const [prompt, setPrompt] = useState<PictionaryPrompt | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [roundDuration, setRoundDuration] = useState(60);
   const [timer, setTimer] = useState<number>(60);
@@ -103,12 +105,34 @@ export const PictionaryGame: React.FC<PictionaryGameProps> = ({ players, onUpdat
   const fetchCard = async () => {
     playSound('click');
     setLoading(true);
+    setError(null);
+    
+    const prefetched = consumePrefetch<PictionaryPrompt>('pictionary', settings);
+    if (prefetched) {
+      setPrompt(prefetched);
+      setLoading(false);
+      setShowPrompt(false);
+      setIsPlaying(false);
+      setTimer(roundDuration);
+      
+      prefetchGame('pictionary', settings);
+      return;
+    }
+
     const response = await generatePictionaryPrompt(settings);
-    setPrompt(response.ok ? response.data : null);
+    if (response.ok && response.data) {
+      setPrompt(response.data);
+      setError(null);
+    } else {
+      setPrompt(null);
+      setError("Failed to generate pictionary prompt. Please try again.");
+    }
     setLoading(false);
     setShowPrompt(false);
     setIsPlaying(false);
     setTimer(roundDuration);
+    
+    if (response.ok) prefetchGame('pictionary', settings);
   };
 
   const startRound = () => {
@@ -152,6 +176,7 @@ export const PictionaryGame: React.FC<PictionaryGameProps> = ({ players, onUpdat
 
   const nextTurn = () => {
     setPrompt(null);
+    setError(null);
     setShowPrompt(false);
     setIsPlaying(false);
     setTimer(roundDuration);
@@ -321,6 +346,10 @@ export const PictionaryGame: React.FC<PictionaryGameProps> = ({ players, onUpdat
 
   if (loading) {
       return <LoadingView message={t.loadingPictionary} gameType={GameType.PICTIONARY} />;
+  }
+
+  if (error) {
+      return <ErrorView onRetry={fetchCard} lang={settings.language} message={error} />;
   }
 
   // SETUP PHASE

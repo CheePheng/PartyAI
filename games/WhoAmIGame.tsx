@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
 import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { ErrorView } from '../components/ErrorView';
 import { Player, WhoAmIWord, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateWhoAmIWords } from '../services/geminiService';
 import { translations } from '../utils/i18n';
@@ -23,6 +24,7 @@ export const WhoAmIGame: React.FC<WhoAmIGameProps> = ({ players, onUpdateScore, 
   const [words, setWords] = useState<WhoAmIWord[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [gameState, setGameState] = useState<'SETUP' | 'READY' | 'PLAYING' | 'SUMMARY'>('SETUP');
   const [roundDuration, setRoundDuration] = useState(60);
   const [timer, setTimer] = useState(60);
@@ -71,11 +73,18 @@ export const WhoAmIGame: React.FC<WhoAmIGameProps> = ({ players, onUpdateScore, 
     if (!category.trim()) return;
     playSound('click');
     setLoading(true);
+    setError(null);
     // Fetch enough words for a fast round
     const response = await generateWhoAmIWords(category, 20, settings);
-    setWords(response.ok && response.data ? response.data : []);
+    if (response.ok && response.data) {
+      setWords(response.data);
+      setError(null);
+      setGameState('READY');
+    } else {
+      setWords([]);
+      setError("Failed to generate words. Please try again.");
+    }
     setLoading(false);
-    setGameState('READY');
   };
 
   const startGame = () => {
@@ -116,6 +125,10 @@ export const WhoAmIGame: React.FC<WhoAmIGameProps> = ({ players, onUpdateScore, 
 
   if (loading) {
       return <LoadingView message={t.loadingWhoAmI} gameType={GameType.WHO_AM_I} />;
+  }
+
+  if (error) {
+      return <ErrorView onRetry={fetchWords} lang={settings.language} message={error} />;
   }
 
   if (gameState === 'SETUP') {

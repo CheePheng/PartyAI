@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
+import { ErrorView } from '../components/ErrorView';
 import { Player, DebatePrompt, Language, GameType, RoundResult, PartySettings } from '../types';
-import { generateDebateTopic } from '../services/geminiService';
+import { generateDebateTopic, consumePrefetch, prefetchGame } from '../services/geminiService';
 import { translations } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 
@@ -19,6 +20,7 @@ interface DebateGameProps {
 export const DebateGame: React.FC<DebateGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [topic, setTopic] = useState<DebatePrompt | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [p1Index, setP1Index] = useState(0);
   const [p2Index, setP2Index] = useState(1);
   const [stage, setStage] = useState<'SETUP' | 'DEBATING' | 'VOTING'>('SETUP');
@@ -50,13 +52,34 @@ export const DebateGame: React.FC<DebateGameProps> = ({ players, onUpdateScore, 
   const generate = async () => {
     playSound('click');
     setLoading(true);
+    setError(null);
+    
+    const prefetched = consumePrefetch<DebatePrompt>('debate', settings);
+    if (prefetched) {
+      setTopic(prefetched);
+      setLoading(false);
+      setStage('DEBATING');
+      setTimer(duration);
+      setIsTimerRunning(false);
+      playSound('start');
+      prefetchGame('debate', settings);
+      return;
+    }
+
     const response = await generateDebateTopic(settings);
-    setTopic(response.ok ? response.data : null);
+    if (response.ok && response.data) {
+      setTopic(response.data);
+      setError(null);
+      setStage('DEBATING');
+      setTimer(duration);
+      setIsTimerRunning(false);
+      playSound('start');
+    } else {
+      setTopic(null);
+      setError("Failed to generate debate topic. Please try again.");
+    }
     setLoading(false);
-    setStage('DEBATING');
-    setTimer(duration);
-    setIsTimerRunning(false);
-    playSound('start');
+    if (response.ok) prefetchGame('debate', settings);
   };
 
   const handleVote = (winnerIndex: number) => {
@@ -79,6 +102,7 @@ export const DebateGame: React.FC<DebateGameProps> = ({ players, onUpdateScore, 
 
     setStage('SETUP');
     setTopic(null);
+    setError(null);
     // Cycle players
     setP1Index((prev) => (prev + 1) % players.length);
     setP2Index((prev) => (prev + 2) % players.length === (prev + 1) % players.length ? (prev + 3) % players.length : (prev + 2) % players.length);
@@ -86,6 +110,10 @@ export const DebateGame: React.FC<DebateGameProps> = ({ players, onUpdateScore, 
 
   if (loading) {
       return <LoadingView message={t.loadingDebate} gameType={GameType.DEBATE} />;
+  }
+
+  if (error) {
+      return <ErrorView onRetry={generate} lang={settings.language} message={error} />;
   }
 
   if (stage === 'SETUP') {

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Player, PartySettings, WouldYouRatherPrompt, GameType, RoundResult } from '../types';
-import { generateWouldYouRather } from '../services/geminiService';
+import { generateWouldYouRather, consumePrefetch, prefetchGame } from '../services/geminiService';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { ErrorView } from '../components/ErrorView';
 import { playSound } from '../utils/sound';
 
 interface WouldYouRatherGameProps {
@@ -16,18 +17,34 @@ interface WouldYouRatherGameProps {
 export const WouldYouRatherGame: React.FC<WouldYouRatherGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [prompt, setPrompt] = useState<WouldYouRatherPrompt | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [votes, setVotes] = useState<Record<string, 'A' | 'B'>>({});
   const [showResults, setShowResults] = useState(false);
 
   const fetchPrompt = async () => {
     setLoading(true);
+    setError(null);
     setShowResults(false);
     setVotes({});
+    
+    const prefetched = consumePrefetch<WouldYouRatherPrompt>('would_you_rather', settings);
+    if (prefetched) {
+      setPrompt(prefetched);
+      setLoading(false);
+      prefetchGame('would_you_rather', settings);
+      return;
+    }
+
     const res = await generateWouldYouRather(settings);
-    if (res.ok) {
+    if (res.ok && res.data) {
       setPrompt(res.data);
+      setError(null);
+    } else {
+      setPrompt(null);
+      setError("Failed to generate prompt. Please try again.");
     }
     setLoading(false);
+    if (res.ok) prefetchGame('would_you_rather', settings);
   };
 
   useEffect(() => {
@@ -71,7 +88,11 @@ export const WouldYouRatherGame: React.FC<WouldYouRatherGameProps> = ({ players,
     );
   }
 
-  if (!prompt) return <div>Failed to load.</div>;
+  if (error) {
+    return <ErrorView onRetry={fetchPrompt} lang={settings.language} message={error} />;
+  }
+
+  if (!prompt) return null;
 
   const votesA = Object.values(votes).filter(v => v === 'A').length;
   const votesB = Object.values(votes).filter(v => v === 'B').length;

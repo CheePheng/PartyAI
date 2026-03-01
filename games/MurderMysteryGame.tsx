@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
 import { PassPhoneScreen } from '../components/PassPhoneScreen';
+import { ErrorView } from '../components/ErrorView';
 import { Player, MurderMysteryScenario, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateMurderMystery } from '../services/geminiService';
 import { translations } from '../utils/i18n';
@@ -20,6 +21,7 @@ interface MurderMysteryGameProps {
 export const MurderMysteryGame: React.FC<MurderMysteryGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [scenario, setScenario] = useState<MurderMysteryScenario | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [viewingIndex, setViewingIndex] = useState(-1);
   const [isRevealed, setIsRevealed] = useState(false);
   const [phase, setPhase] = useState<'SETUP' | 'ROLES' | 'PLAY' | 'ACCUSE' | 'REVEAL'>('SETUP');
@@ -31,11 +33,13 @@ export const MurderMysteryGame: React.FC<MurderMysteryGameProps> = ({ players, o
   const start = async () => {
     playSound('click');
     setLoading(true);
+    setError(null);
     const response = await generateMurderMystery(players.length, settings);
     const data = response.ok ? response.data : null;
 
     if (!data) {
         setLoading(false);
+        setError("Failed to generate scenario. Please try again.");
         return;
     }
 
@@ -97,6 +101,10 @@ export const MurderMysteryGame: React.FC<MurderMysteryGameProps> = ({ players, o
   };
 
   if (loading) return <LoadingView message={t.loadingMurder} gameType={GameType.MURDER_MYSTERY} />;
+
+  if (error) {
+      return <ErrorView onRetry={start} lang={settings.language} message={error} />;
+  }
 
   if (phase === 'SETUP') {
     return (

@@ -18,10 +18,10 @@ export const Button: React.FC<ButtonProps> = ({
   const baseStyles = "inline-flex items-center justify-center font-bold rounded-2xl motion-safe:transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed select-none";
   
   const variants = {
-    primary: "bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:via-purple-400 hover:to-pink-400 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.4)] border border-white/10",
-    secondary: "bg-white/10 hover:bg-white/20 text-white border border-white/10 backdrop-blur-md shadow-lg",
+    primary: "bg-gradient-to-br from-theme-accent to-theme-accent-hover hover:from-theme-accent-hover hover:to-theme-accent text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] border border-white/10",
+    secondary: "bg-theme-card/50 hover:bg-theme-card/80 text-theme-text border border-white/10 backdrop-blur-md shadow-lg",
     danger: "bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-400 hover:to-rose-500 text-white shadow-[0_8px_30px_rgba(225,29,72,0.3)] border border-red-400/20",
-    ghost: "bg-transparent hover:bg-white/10 text-gray-300 hover:text-white"
+    ghost: "bg-transparent hover:bg-theme-card/50 text-theme-muted hover:text-theme-text"
   };
 
   const sizes = {

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { LoadingView } from '../components/LoadingView';
+import { ErrorView } from '../components/ErrorView';
 import { Player, CategoryRushRound, Language, GameType, RoundResult, PartySettings } from '../types';
 import { generateCategoryRush } from '../services/geminiService';
 import { translations } from '../utils/i18n';
@@ -19,6 +20,7 @@ interface CategoryRushGameProps {
 export const CategoryRushGame: React.FC<CategoryRushGameProps> = ({ players, onUpdateScore, onRoundComplete, onExit, settings }) => {
   const [roundData, setRoundData] = useState<CategoryRushRound | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [roundDuration, setRoundDuration] = useState(90);
   const [timer, setTimer] = useState<number>(90);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -47,13 +49,20 @@ export const CategoryRushGame: React.FC<CategoryRushGameProps> = ({ players, onU
   const startRound = async () => {
     playSound('click');
     setLoading(true);
+    setError(null);
     const response = await generateCategoryRush(settings);
-    setRoundData(response.ok ? response.data : null);
+    if (response.ok && response.data) {
+      setRoundData(response.data);
+      setError(null);
+      setStage('PLAYING');
+      setIsPlaying(true);
+      setTimer(roundDuration);
+      playSound('start');
+    } else {
+      setRoundData(null);
+      setError("Failed to generate category rush prompt. Please try again.");
+    }
     setLoading(false);
-    setStage('PLAYING');
-    setIsPlaying(true);
-    setTimer(roundDuration);
-    playSound('start');
   };
 
   const awardWinner = (winner: Player | null) => {
@@ -78,6 +87,10 @@ export const CategoryRushGame: React.FC<CategoryRushGameProps> = ({ players, onU
 
   if (loading) {
       return <LoadingView message={t.loadingScatter} gameType={GameType.SCATTERGORIES} />;
+  }
+
+  if (error) {
+      return <ErrorView onRetry={startRound} lang={settings.language} message={error} />;
   }
 
   if (stage === 'SETUP') {
